@@ -1,6 +1,7 @@
 import os
 import sys
 import gazu
+import partd
 import pymongo
 
 from avalon import io as avalon
@@ -13,18 +14,17 @@ os.environ["AVALON_PROJECTS"] = r""
 os.environ["AVALON_PROJECT"] = "temp"
 os.environ["AVALON_ASSET"] = "bruce"
 os.environ["AVALON_SILO"] = "assets"
-os.environ["AVALON_CONFIG"] = "polly"
-os.environ["AVALON_MONGO"] = os.environ.get(
-    "AVALON_MONGO", "mongodb://127.0.0.1:27017"
-)
-
-
 
 def get_consistent_name(name):
     """Converts potentially inconsistent names."""
     return name.replace(" ", "_").lower()
 
 def entity_new_callback(data):
+    """On receiving an asset creation event insert it the Avalon mongodb
+    and store Zou id and Avalon id key value pair for using in asset 
+    update events"""
+
+    # Log in to API
     gazu.client.set_host("http://kitsu.teepee/api")
     gazu.log_in("teepee.external@mail.teepee", "qOi4mG6zI50a")
     
@@ -36,11 +36,8 @@ def entity_new_callback(data):
     avalon.uninstall()
     avalon.install()
 
-    print("Parent: {0}".format([project["code"]]))
-    print(avalon.locate([project["code"]]))
-
     entity_type = gazu.entity.get_entity_type(asset["entity_type_id"])
-    data = {
+    asset_data = {
         "schema": "avalon-core:asset-2.0",
         "name": get_consistent_name(asset["name"]),
         "silo": "assets",
@@ -52,14 +49,31 @@ def entity_new_callback(data):
         }
     }
 
+    # Inset asset into Avalon DB
+    avalon.insert_one(asset_data)
+
+    # Store Zou Id and Avalon Id key value pair of the asset
+    directory = os.environ["PARTD_PATH"]
+    directory = os.path.join(directory, "data", project["code"])
+
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+
+    p = partd.File(directory)
+
+    if p.get(data["entity_id"]):
+        p.delete(data["entity_id"])
+
+    avalon_asset = avalon.find_one(
+        {"name": get_consistent_name(asset["name"]),
+        "type": "asset"})
+
+    value = bytes(str(avalon_asset["_id"]), "utf-8")
+    key_values = {data["entity_id"]: value}
+    p.append(key_values)
+
     avalon.uninstall()
-    avalon.install()
 
-    avalon.insert_one(data)
-
-    avalon.uninstall()
-
-    #print("Project Name: {1}\nProject Code: {2}\nAsset: {0}\n".format(asset["name"], project["name"], project["code"]))
     print("Create Asset \"{0}\" in Project \"{1} ({2})\"".format(asset["name"], project["name"], project["code"]))
 
     
