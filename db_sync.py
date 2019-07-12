@@ -1,5 +1,7 @@
 import os
 import gazu
+import partd
+
 from avalon import io as avalon
 
 
@@ -81,6 +83,7 @@ def main():
                 )
 
                 data = {
+                    "id": asset["id"],
                     "schema": "avalon-core:asset-2.0",
                     "name": get_consistent_name(asset["name"]),
                     "silo": silo,
@@ -235,7 +238,30 @@ def main():
                     project["code"], asset_name
                 )
             )
+            entity_id = asset.pop("id")
             avalon.insert_one(asset)
+
+            # Store Zou Id and Avalon Id key value pair of the asset
+            directory = os.environ["PARTD_PATH"]
+            directory = os.path.join(directory, "data", project["code"])
+
+            if not os.path.exists(directory):
+                os.mkdir(directory)
+
+            p = partd.File(directory)
+
+            if p.get(entity_id):
+                p.delete(entity_id)
+                print("Deleting: {0}".format(entity_id))
+                
+
+            avalon_asset = avalon.find_one(
+                {"name": get_consistent_name(asset["name"]),
+                "type": "asset"})
+
+            value = bytes(str(avalon_asset["_id"]), "utf-8")
+            key_values = {entity_id: value}
+            p.append(key_values)
 
     print("Success")
 
