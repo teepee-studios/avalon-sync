@@ -1,8 +1,6 @@
 import os
-import sys
 import gazu
 import partd
-import pymongo
 
 from avalon import io as avalon
 
