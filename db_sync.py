@@ -110,13 +110,18 @@ def main():
 
         objects[project["code"]] = entities
 
+        resolution_width = int(int(project["resolution"]) / 9 * 16)
+
         projects[project["code"]] = {
             "schema": "avalon-core:project-2.0",
             "type": "project",
             "name": project["code"],
             "data": {
                 "label": project["name"],
-                "code": project["code"]
+                "code": project["code"],
+                "fps": project["fps"],
+                "resolution_width": resolution_width,
+                "resolution_height": project["resolution"]
             },
             "parent": None,
             "config": {
