@@ -110,7 +110,12 @@ def main():
 
         objects[project["code"]] = entities
 
-        resolution_width = int(int(project["resolution"]) / 9 * 16)
+        # Newly created projects don't have a resolution set
+        if project["resolution"]:
+            resolution_width = int(int(project["resolution"]) / 9 * 16)
+        else:
+            resolution_width = None
+            project["resolution"] = None
 
         projects[project["code"]] = {
             "schema": "avalon-core:project-2.0",
