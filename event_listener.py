@@ -51,7 +51,7 @@ def entity_new_callback(data):
 
     # Store Zou Id and Avalon Id key value pair of the asset
     directory = os.environ["PARTD_PATH"]
-    directory = os.path.join(directory, "data", project["code"])
+    directory = os.path.join(directory, "data", project["id"])
 
     # Create the data directory for the project if it doesn't exist.
     if not os.path.exists(directory):
@@ -70,7 +70,7 @@ def entity_new_callback(data):
         {"name": get_consistent_name(asset["name"]),
         "type": "asset"})
 
-    # Incode and store the data as a utf-8 bytes
+    # Encode and store the data as a utf-8 bytes
     value = bytes(str(avalon_asset["_id"]), "utf-8")
     key_values = {data["entity_id"]: value}
     p.append(key_values)
@@ -95,7 +95,7 @@ def entity_update_callback(data):
 
     # Lookup the Zou Id and Avalon Id key value pair of the asset
     directory = os.environ["PARTD_PATH"]
-    directory = os.path.join(directory, "data", project["code"])
+    directory = os.path.join(directory, "data", project["id"])
 
     # Init partd
     p = partd.File(directory)
@@ -191,14 +191,14 @@ def project_new_callback(data):
 
     # Store Zou Id and Avalon Id key value pair of the asset
     directory = os.environ["PARTD_PATH"]
-    directory = os.path.join(directory, "data", project["code"])
+    directory = os.path.join(directory, "data", project["id"])
 
     # Create the data directory for the project if it doesn't exist.
     if not os.path.exists(directory):
         os.mkdir(directory)
 
     # Init partd
-    p = partd.File(directory)
+    p = partd.Pickle(partd.File(directory))
 
     # Check if the asproject set is already stored and delete it if it is.
     # (We're making the assumption that IDs supplied to us are unique).
@@ -210,15 +210,14 @@ def project_new_callback(data):
         {"name": get_consistent_name(project["code"]),
         "type": "project"})
 
-    # Incode and store the data as a utf-8 bytes
-    value = bytes(str(avalon_project["_id"]), "utf-8")
+    # Encode and store the data as a utf-8 bytes
+    value = [avalon_project["_id"], avalon_project["data"]['code']]
     key_values = {data["project_id"]: value}
     p.append(key_values)
 
     avalon.uninstall()
 
     print("Create Project: \"{0} ({1})\"".format(project["name"], project["code"]))
-
 
 def project_update_callback(data):
     """Update a project in Avalon when receiving an project:update event"""
@@ -227,6 +226,36 @@ def project_update_callback(data):
     gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
     
     project = gazu.project.get_project(data["project_id"])
+
+    
+    # Lookup the Zou Id and Avalon Id key value pair of the asset
+    directory = os.environ["PARTD_PATH"]
+    directory = os.path.join(directory, "data", project["id"])
+
+    # Init partd
+    p = partd.Pickle(partd.File(directory))
+
+    # Get the Avalon asset ID from partd
+    project_data = p.get(data["project_id"])
+    project_id = project_data[0]
+    project_code = project_data[1]
+
+    print("Project Data: {0}".format(project_data))
+    print("Project ID: {0}".format(project_id))
+    print("Project Collection: {0}".format(project_code))
+
+    os.environ["AVALON_PROJECT"] = project_code
+
+    avalon.uninstall()
+    avalon.install()
+
+    # Find the asset in Avalon
+    avalon_project = avalon.find_one(
+        {"_id": avalon.ObjectId(project_id),
+        "type": "project"})
+
+    print("Gazu Data: {0}\n\n".format(project))
+    print("Avalon Data: {0}\n".format(avalon_project))
 
     # Ensure project["code"] consistency.
     project_name = get_consistent_name(project["name"])
@@ -237,29 +266,7 @@ def project_update_callback(data):
         proj["id"] = project["id"]
         project = gazu.project.update_project(proj)
         print("Updating Project Code...")
-
-    os.environ["AVALON_PROJECT"] = project["code"]
-
-    avalon.uninstall()
-    avalon.install()
-
-    # Lookup the Zou Id and Avalon Id key value pair of the asset
-    directory = os.environ["PARTD_PATH"]
-    directory = os.path.join(directory, "data", project["code"])
-
-    # Init partd
-    p = partd.File(directory)
-
-    # Get the Avalon asset ID from partd
-    project_id = p.get(data["project_id"])
-    project_id = bytes.decode(project_id, "utf-8")
-
-    print("Project ID: {0}".format(project_id))
-
-    # Find the asset in Avalon
-    avalon_project = avalon.find_one(
-        {"_id": avalon.ObjectId(project_id),
-        "type": "project"})
+        os.environ["AVALON_PROJECT"] = project["code"]
 
     # Projects may not have a resolution set
     if project["resolution"]:
