@@ -22,8 +22,8 @@ def entity_new_callback(data):
     """
 
     # Log in to API
-    gazu.client.set_host("http://kitsu.teepee/api")
-    gazu.log_in("teepee.external@mail.teepee", "qOi4mG6zI50a")
+    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
+    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
     
     asset = gazu.asset.get_asset(data["entity_id"])
     project = gazu.project.get_project(asset["project_id"])
@@ -82,8 +82,8 @@ def entity_new_callback(data):
 def entity_update_callback(data):
     """Update an asset name when receiving an entity:update event"""
     # Log in to API
-    gazu.client.set_host("http://kitsu.teepee/api")
-    gazu.log_in("teepee.external@mail.teepee", "qOi4mG6zI50a")
+    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
+    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
     
     asset = gazu.asset.get_asset(data["entity_id"])
     project = gazu.project.get_project(asset["project_id"])
@@ -124,8 +124,8 @@ def project_new_callback(data):
     """
 
     # Log in to API
-    gazu.client.set_host("http://kitsu.teepee/api")
-    gazu.log_in("teepee.external@mail.teepee", "qOi4mG6zI50a")
+    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
+    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
     
     project = gazu.project.get_project(data["project_id"])
 
@@ -150,7 +150,7 @@ def project_new_callback(data):
     else:
         resolution_width = None
         project["resolution"] = None
-
+    # Get tasks from Gazu API
     tasks = [{"name": get_consistent_name(task["name"]), 
         "label":task["name"]} for task in gazu.task.all_task_types()]
 
@@ -217,15 +217,79 @@ def project_new_callback(data):
 
     avalon.uninstall()
 
-    print("Create Project \"{0} ({1})\"".format(project["name"], project["code"]))
+    print("Create Project: \"{0} ({1})\"".format(project["name"], project["code"]))
 
 
 def project_update_callback(data):
-    """Update projects in Avalon"""
-    pass
+    """Update a project in Avalon when receiving an project:update event"""
+    # Log in to API
+    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
+    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
+    
+    project = gazu.project.get_project(data["project_id"])
+
+    # Ensure project["code"] consistency.
+    project_name = get_consistent_name(project["name"])
+    
+    if project["code"] != project_name:
+        proj = {}
+        proj["code"] = project_name
+        proj["id"] = project["id"]
+        project = gazu.project.update_project(proj)
+        print("Updating Project Code...")
+
+    os.environ["AVALON_PROJECT"] = project["code"]
+
+    avalon.uninstall()
+    avalon.install()
+
+    # Lookup the Zou Id and Avalon Id key value pair of the asset
+    directory = os.environ["PARTD_PATH"]
+    directory = os.path.join(directory, "data", project["code"])
+
+    # Init partd
+    p = partd.File(directory)
+
+    # Get the Avalon asset ID from partd
+    project_id = p.get(data["project_id"])
+    project_id = bytes.decode(project_id, "utf-8")
+
+    print("Project ID: {0}".format(project_id))
+
+    # Find the asset in Avalon
+    avalon_project = avalon.find_one(
+        {"_id": avalon.ObjectId(project_id),
+        "type": "project"})
+
+    # Projects may not have a resolution set
+    if project["resolution"]:
+        resolution_width = int(int(project["resolution"]) / 9 * 16)
+    else:
+        resolution_width = None
+        project["resolution"] = None
+
+    # Get latest Tasks from Gazu
+    tasks = [{"name": get_consistent_name(task["name"]), 
+        "label":task["name"]} for task in gazu.task.all_task_types()]
+
+    # Update the Avalon project with new data from Gazu
+    avalon_project["name"] = get_consistent_name(project["name"])
+    avalon_project["data"]["label"] = project["name"]
+    avalon_project["data"]["code"] = project["code"]
+    avalon_project["data"]["fps"] = project["fps"]
+    avalon_project["data"]["resolution_width"] = resolution_width
+    avalon_project["data"]["resolution_height"] = project["resolution"]
+    avalon_project["config"]["tasks"] = tasks
+
+    avalon.replace_one(
+        {"_id": avalon.ObjectId(project_id),
+        "type": "project"}, avalon_project
+    )
+
+    print("Updating Project: \"{0} ({1})\"".format(project["name"], project["code"]))
     
 
-gazu.client.set_host("http://kitsu.teepee")
+gazu.client.set_host(os.environ["GAZU_URL"])
 event_client = gazu.events.init()
 
 # Asset Event Types
