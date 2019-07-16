@@ -253,13 +253,17 @@ def main():
 
             # Store Zou Id and Avalon Id key value pair of the asset
             directory = os.environ["PARTD_PATH"]
-            directory = os.path.join(directory, "data", project["code"])
+            directory = os.path.join(directory, "data", project["id"])
 
+            # Create the data directory for the project if it doesn't exist.
             if not os.path.exists(directory):
                 os.mkdir(directory)
 
+            # Init partd
             p = partd.File(directory)
 
+            # Check if the asset is already stored and delete it if it is.
+            # (We're making the assumption that IDs supplied to us are unique).
             if p.get(entity_id):
                 p.delete(entity_id)
                 print("Deleting: {0}".format(entity_id))
@@ -269,6 +273,7 @@ def main():
                 {"name": get_consistent_name(asset["name"]),
                 "type": "asset"})
 
+            # Encode and store the data as a utf-8 bytes
             value = bytes(str(avalon_asset["_id"]), "utf-8")
             key_values = {entity_id: value}
             p.append(key_values)
