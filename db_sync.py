@@ -118,6 +118,7 @@ def main():
             project["resolution"] = None
 
         projects[project["code"]] = {
+            "id": project["id"],
             "schema": "avalon-core:project-2.0",
             "type": "project",
             "name": project["code"],
@@ -208,7 +209,43 @@ def main():
         avalon.uninstall()
         avalon.install()
 
+        # Remove Gazu ID from project so it doesn't go into the Avalon DB
+        project_id = project.pop("id")
+        
+        # Inset project into Avalon DB
         avalon.insert_one(project)
+
+        # Put Dazu ID back into the project so we can use it later for assets
+        project.update(id=project_id)
+        
+        
+        # Store Zou Id and Avalon Id key value pair of the asset
+
+        # Set the directory where partd stores it's data
+        directory = os.environ["PARTD_PATH"]
+        directory = os.path.join(directory, "data", project_id)
+
+        # Create the data directory for the project if it doesn't exist.
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+
+        # Init partd
+        p = partd.Pickle(partd.File(directory))
+
+        # Check if the project set is already stored and delete it if it is.
+        # (We're making the assumption that IDs supplied to us are unique).
+        if p.get(project_id):
+            p.delete(project_id)
+        
+        # Find the project in Avalon
+        avalon_project = avalon.find_one(
+            {"name": get_consistent_name(project["name"]),
+            "type": "project"})
+        
+        # Encode and store the data as a utf-8 bytes
+        value = [avalon_project["_id"], avalon_project["data"]['code']]
+        key_values = {project_id: value}
+        p.append(key_values)
 
     for project["code"], assets in objects.items():
         os.environ["AVALON_PROJECT"] = project["code"]
@@ -249,9 +286,13 @@ def main():
                 )
             )
             entity_id = asset.pop("id")
+            # Inset asset into Avalon DB
             avalon.insert_one(asset)
 
+
             # Store Zou Id and Avalon Id key value pair of the asset
+            print(project)
+            # Set the directory where partd stores it's data
             directory = os.environ["PARTD_PATH"]
             directory = os.path.join(directory, "data", project["id"])
 
