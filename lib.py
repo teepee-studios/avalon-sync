@@ -49,3 +49,28 @@ def set_project_data(gazu_project_id, avalon_project_id, avalon_collection):
     value = [avalon_project_id, avalon_collection]
     key_values = {gazu_project_id: value}
     p.append(key_values)
+
+def set_asset_data(gazu_project_id, gazu_asset_id, avalon_asset_id):
+    # Store Zou Id and Avalon Id key value pair of the asset
+            
+    # Set the directory where partd stores it's data
+    directory = os.environ["PARTD_PATH"]
+    directory = os.path.join(directory, "data", gazu_project_id)
+
+    # Create the data directory for the project if it doesn't exist.
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+
+    # Init partd
+    p = partd.File(directory)
+
+    # Check if the asset is already stored and delete it if it is.
+    # (We're making the assumption that IDs supplied to us are unique).
+    if p.get(gazu_asset_id):
+        p.delete(gazu_asset_id)
+        print("Deleting: {0}".format(gazu_asset_id))
+    
+    # Encode and store the data as a utf-8 bytes
+    value = bytes(str(avalon_asset_id), "utf-8")
+    key_values = {gazu_asset_id: value}
+    p.append(key_values)
