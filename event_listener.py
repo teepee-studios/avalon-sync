@@ -3,16 +3,13 @@ import gazu
 import partd
 
 from avalon import io as avalon
+import lib as lib
 
 
 os.environ["AVALON_PROJECTS"] = r""
 os.environ["AVALON_PROJECT"] = "temp"
 os.environ["AVALON_ASSET"] = "bruce"
 os.environ["AVALON_SILO"] = "assets"
-
-def get_consistent_name(name):
-    """Converts potentially inconsistent names."""
-    return name.replace(" ", "_").lower()
 
 def entity_new_callback(data):
     """
@@ -36,7 +33,7 @@ def entity_new_callback(data):
     entity_type = gazu.entity.get_entity_type(asset["entity_type_id"])
     asset_data = {
         "schema": "avalon-core:asset-2.0",
-        "name": get_consistent_name(asset["name"]),
+        "name": lib.get_consistent_name(asset["name"]),
         "silo": "assets",
         "type": "asset",
         "parent": avalon.locate([project["code"]]),
@@ -49,7 +46,10 @@ def entity_new_callback(data):
     # Inset asset into Avalon DB
     avalon.insert_one(asset_data)
 
+
     # Store Zou Id and Avalon Id key value pair of the asset
+
+    # Set the directory where partd stores it's data
     directory = os.environ["PARTD_PATH"]
     directory = os.path.join(directory, "data", project["id"])
 
@@ -67,7 +67,7 @@ def entity_new_callback(data):
 
     # Find the asset in Avalon
     avalon_asset = avalon.find_one(
-        {"name": get_consistent_name(asset["name"]),
+        {"name": lib.get_consistent_name(asset["name"]),
         "type": "asset"})
 
     # Encode and store the data as a utf-8 bytes
@@ -93,7 +93,10 @@ def entity_update_callback(data):
     avalon.uninstall()
     avalon.install()
 
+
     # Lookup the Zou Id and Avalon Id key value pair of the asset
+
+    # Set the directory where partd stores it's data
     directory = os.environ["PARTD_PATH"]
     directory = os.path.join(directory, "data", project["id"])
 
@@ -130,7 +133,7 @@ def project_new_callback(data):
     project = gazu.project.get_project(data["project_id"])
 
     # Ensure project["code"] consistency.
-    project_name = get_consistent_name(project["name"])
+    project_name = lib.get_consistent_name(project["name"])
     
     if project["code"] != project_name:
         proj = {}
@@ -151,7 +154,7 @@ def project_new_callback(data):
         resolution_width = None
         project["resolution"] = None
     # Get tasks from Gazu API
-    tasks = [{"name": get_consistent_name(task["name"]), 
+    tasks = [{"name": lib.get_consistent_name(task["name"]), 
         "label":task["name"]} for task in gazu.task.all_task_types()]
 
     project_data = {
@@ -186,34 +189,17 @@ def project_new_callback(data):
         }
     }
 
-    # Inset asset into Avalon DB
+    # Insert asset into Avalon DB
     avalon.insert_one(project_data)
-
-    # Store Zou Id and Avalon Id key value pair of the asset
-    directory = os.environ["PARTD_PATH"]
-    directory = os.path.join(directory, "data", project["id"])
-
-    # Create the data directory for the project if it doesn't exist.
-    if not os.path.exists(directory):
-        os.mkdir(directory)
-
-    # Init partd
-    p = partd.Pickle(partd.File(directory))
-
-    # Check if the asproject set is already stored and delete it if it is.
-    # (We're making the assumption that IDs supplied to us are unique).
-    if p.get(data["project_id"]):
-        p.delete(data["project_id"])
 
     # Find the project in Avalon
     avalon_project = avalon.find_one(
-        {"name": get_consistent_name(project["code"]),
+        {"name": lib.get_consistent_name(project["code"]),
         "type": "project"})
 
-    # Encode and store the data as a utf-8 bytes
-    value = [avalon_project["_id"], avalon_project["data"]['code']]
-    key_values = {data["project_id"]: value}
-    p.append(key_values)
+    # Encode and store the data
+    lib.set_project_data(data["project_id"], avalon_project["_id"],
+        avalon_project["data"]['code'])
 
     avalon.uninstall()
 
@@ -227,38 +213,21 @@ def project_update_callback(data):
     
     project = gazu.project.get_project(data["project_id"])
 
-    
-    # Lookup the Zou Id and Avalon Id key value pair of the asset
-    directory = os.environ["PARTD_PATH"]
-    directory = os.path.join(directory, "data", project["id"])
-
-    # Init partd
-    p = partd.Pickle(partd.File(directory))
-
     # Get the Avalon asset ID from partd
-    project_data = p.get(data["project_id"])
-    project_id = project_data[0]
-    project_code = project_data[1]
+    project_data = lib.get_project_data(data["project_id"])
 
-    print("Project Data: {0}".format(project_data))
-    print("Project ID: {0}".format(project_id))
-    print("Project Collection: {0}".format(project_code))
-
-    os.environ["AVALON_PROJECT"] = project_code
+    os.environ["AVALON_PROJECT"] = project_data["collection"]
 
     avalon.uninstall()
     avalon.install()
 
-    # Find the asset in Avalon
+    # Find the project in Avalon
     avalon_project = avalon.find_one(
-        {"_id": avalon.ObjectId(project_id),
+        {"_id": avalon.ObjectId(project_data["id"]),
         "type": "project"})
 
-    print("Gazu Data: {0}\n\n".format(project))
-    print("Avalon Data: {0}\n".format(avalon_project))
-
     # Ensure project["code"] consistency.
-    project_name = get_consistent_name(project["name"])
+    project_name = lib.get_consistent_name(project["name"])
     
     if project["code"] != project_name:
         proj = {}
@@ -276,11 +245,11 @@ def project_update_callback(data):
         project["resolution"] = None
 
     # Get latest Tasks from Gazu
-    tasks = [{"name": get_consistent_name(task["name"]), 
+    tasks = [{"name": lib.get_consistent_name(task["name"]), 
         "label":task["name"]} for task in gazu.task.all_task_types()]
 
     # Update the Avalon project with new data from Gazu
-    avalon_project["name"] = get_consistent_name(project["name"])
+    avalon_project["name"] = lib.get_consistent_name(project["name"])
     avalon_project["data"]["label"] = project["name"]
     avalon_project["data"]["code"] = project["code"]
     avalon_project["data"]["fps"] = project["fps"]
@@ -289,7 +258,7 @@ def project_update_callback(data):
     avalon_project["config"]["tasks"] = tasks
 
     avalon.replace_one(
-        {"_id": avalon.ObjectId(project_id),
+        {"_id": avalon.ObjectId(project_data["id"]),
         "type": "project"}, avalon_project
     )
 
