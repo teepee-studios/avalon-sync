@@ -266,35 +266,12 @@ def main():
             # Inset asset into Avalon DB
             avalon.insert_one(asset)
 
-
-            # Store Zou Id and Avalon Id key value pair of the asset
-            
-            # Set the directory where partd stores it's data
-            directory = os.environ["PARTD_PATH"]
-            directory = os.path.join(directory, "data", project["id"])
-
-            # Create the data directory for the project if it doesn't exist.
-            if not os.path.exists(directory):
-                os.mkdir(directory)
-
-            # Init partd
-            p = partd.File(directory)
-
-            # Check if the asset is already stored and delete it if it is.
-            # (We're making the assumption that IDs supplied to us are unique).
-            if p.get(entity_id):
-                p.delete(entity_id)
-                print("Deleting: {0}".format(entity_id))
-                
-
             avalon_asset = avalon.find_one(
                 {"name": lib.get_consistent_name(asset["name"]),
                 "type": "asset"})
 
             # Encode and store the data as a utf-8 bytes
-            value = bytes(str(avalon_asset["_id"]), "utf-8")
-            key_values = {entity_id: value}
-            p.append(key_values)
+            lib.set_asset_data(project["id"], entity_id, avalon_asset["_id"])
 
     print("Success")
 
@@ -303,8 +280,8 @@ if __name__ == '__main__':
     import time
 
     print("Logging in..")
-    gazu.client.set_host("http://kitsu.teepee/api")
-    gazu.log_in("teepee.external@mail.teepee", "qOi4mG6zI50a")
+    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
+    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
     print("Logged in..")
 
     while True:
