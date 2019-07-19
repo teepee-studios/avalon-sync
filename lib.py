@@ -48,12 +48,13 @@ def set_project_data(gazu_project_id, avalon_project_id, avalon_collection):
     # (We're making the assumption that IDs supplied to us are unique).
     if p.get(gazu_project_id):
         p.delete(gazu_project_id)
-        print("Deleting: {0}".format(gazu_project_id))
+        print("Removing old project info for: {0}".format(gazu_project_id))
           
     # Encode and store the data as a utf-8 bytes
     value = [avalon_project_id, avalon_collection]
     key_values = {gazu_project_id: value}
     p.append(key_values)
+    print("Adding new project info for: {0}".format(gazu_project_id))
 
 def set_asset_data(gazu_project_id, gazu_asset_id, avalon_asset_id):
     # Store Zou Id and Avalon Id key value pair of the asset
