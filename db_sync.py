@@ -13,15 +13,8 @@ def main():
         "label":task["name"]} for task in gazu.task.all_task_types()]
     print("Get Tasks...")
     for project in gazu.project.all_projects():
-        # Ensure project["code"] consistency.
+        # Ensure project["name"] consistency.
         project_name = lib.get_consistent_name(project["name"])
-
-        if project["code"] != project_name:
-            proj = {}
-            proj["code"] = project_name
-            proj["id"] = project["id"]
-            project = gazu.project.update_project(proj)
-            print("Updating Project Code...")
 
         # Collect assets.
         assets = []
@@ -83,7 +76,7 @@ def main():
                     "name": lib.get_consistent_name(asset["name"]),
                     "silo": silo,
                     "type": "asset",
-                    "parent": project["code"],
+                    "parent": project_name,
                     "data": {
                         "label": asset.get("label", asset["name"]),
                         "group": entity_type["name"],
@@ -112,14 +105,13 @@ def main():
             resolution_width = None
             project["resolution"] = None
 
-        projects[project["code"]] = {
+        projects[project_name] = {
             "id": project["id"],
             "schema": "avalon-core:project-2.0",
             "type": "project",
-            "name": project["code"],
+            "name": project_name,
             "data": {
                 "label": project["name"],
-                "code": project["code"],
                 "fps": project["fps"],
                 "resolution_width": resolution_width,
                 "resolution_height": project["resolution"]
@@ -186,10 +178,9 @@ def main():
 
             # Update the Avalon project with new data from Gazu
             print("Updating Project: \"{0} ({1})\"".format(project["name"], 
-                project["data"]["code"]))
+                project_name))
             avalon_project["name"] = project["name"]
             avalon_project["data"]["label"] = project["data"]["label"]
-            avalon_project["data"]["code"] = project["data"]["code"]
             avalon_project["data"]["fps"] = project["data"]["fps"]
             avalon_project["data"]["resolution_width"] = project["data"]["resolution_width"]
             avalon_project["data"]["resolution_height"] = project["data"]["resolution_height"]
