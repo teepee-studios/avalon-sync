@@ -235,7 +235,6 @@ def project_update_callback(data):
         proj["id"] = project["id"]
         project = gazu.project.update_project(proj)
         print("Updating Project Code...")
-        os.environ["AVALON_PROJECT"] = project["code"]
 
     # Projects may not have a resolution set
     if project["resolution"]:
@@ -261,8 +260,20 @@ def project_update_callback(data):
         {"_id": avalon.ObjectId(project_data["id"]),
         "type": "project"}, avalon_project
     )
+    
+    avalon.uninstall()
 
-    print("Updating Project: \"{0} ({1})\"".format(project["name"], project["code"]))
+    
+    if os.environ["AVALON_PROJECT"] != avalon_project["name"]:
+        print("Updating project name from {0} to {1}".format(
+            os.environ["AVALON_PROJECT"], avalon_project["name"]))
+        lib.collection_rename(avalon_project["name"])
+
+    lib.set_project_data(data["project_id"], avalon_project["_id"],
+        avalon_project["data"]['code'])
+
+    print("Updating Project: \"{0} ({1})\"".format(
+        avalon_project["data"]["label"], avalon_project["name"]))
     
 
 gazu.client.set_host(os.environ["GAZU_URL"])
