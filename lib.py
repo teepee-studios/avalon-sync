@@ -1,6 +1,10 @@
 import os
+import sys
 import gazu
 import partd
+import pymongo
+
+self = sys.modules[__name__]
 
 def get_consistent_name(name):
     """Converts potentially inconsistent names."""
@@ -44,6 +48,7 @@ def set_project_data(gazu_project_id, avalon_project_id, avalon_collection):
     # (We're making the assumption that IDs supplied to us are unique).
     if p.get(gazu_project_id):
         p.delete(gazu_project_id)
+        print("Deleting: {0}".format(gazu_project_id))
           
     # Encode and store the data as a utf-8 bytes
     value = [avalon_project_id, avalon_collection]
@@ -74,3 +79,17 @@ def set_asset_data(gazu_project_id, gazu_asset_id, avalon_asset_id):
     value = bytes(str(avalon_asset_id), "utf-8")
     key_values = {gazu_asset_id: value}
     p.append(key_values)
+
+
+def collection_rename(*args, **kwargs):
+    """Rename mongodb collection name.
+    
+    Renames the current collection to the supplied name."""
+    timeout = os.getenv("MONGO_TIMEOUT", 5000) 
+    mongo = os.environ["AVALON_MONGO"]
+    database = os.environ["AVALON_DB"]
+
+    self._mongo_client = pymongo.MongoClient(mongo, serverSelectionTimeoutMS=timeout)
+    self._database = self._mongo_client[database]
+    self._database[os.environ["AVALON_PROJECT"]].rename(
+        *args, **kwargs)
