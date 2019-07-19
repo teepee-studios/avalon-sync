@@ -175,10 +175,10 @@ def main():
             avalon_project = avalon.find_one(
                 {"_id": avalon.ObjectId(project_info["id"]),
                 "type": "project"})
-
+            print
             # Update the Avalon project with new data from Gazu
-            print("Updating Project: \"{0} ({1})\"".format(project["name"], 
-                project_name))
+            print("Updating Project: \"{0} ({1})\"".format(project["data"]["label"], 
+                name))
             avalon_project["name"] = project["name"]
             avalon_project["data"]["label"] = project["data"]["label"]
             avalon_project["data"]["fps"] = project["data"]["fps"]
@@ -190,6 +190,14 @@ def main():
                 {"_id": avalon.ObjectId(project_info["id"]),
                 "type": "project"}, avalon_project
             )
+            if os.environ["AVALON_PROJECT"] != avalon_project["name"]:
+                print("Updating project name from {0} to {1}".format(
+                    os.environ["AVALON_PROJECT"], avalon_project["name"]))
+                lib.collection_rename(avalon_project["name"])
+
+                lib.set_project_data(project["id"], project_info["id"],
+                    avalon_project["name"])
+
         else:
             print("Installing project: {0}".format(project["name"]))
             os.environ["AVALON_PROJECT"] = project["name"]
