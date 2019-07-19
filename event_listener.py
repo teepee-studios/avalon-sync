@@ -25,7 +25,9 @@ def entity_new_callback(data):
     asset = gazu.asset.get_asset(data["entity_id"])
     project = gazu.project.get_project(asset["project_id"])
 
-    os.environ["AVALON_PROJECT"] = project["code"]
+    project_name = get_consistent_name(project["name"])
+
+    os.environ["AVALON_PROJECT"] = project_name
 
     avalon.uninstall()
     avalon.install()
@@ -36,7 +38,7 @@ def entity_new_callback(data):
         "name": lib.get_consistent_name(asset["name"]),
         "silo": "assets",
         "type": "asset",
-        "parent": avalon.locate([project["code"]]),
+        "parent": avalon.locate([project_name]),
         "data": {
             "label": asset.get("label", asset["name"]),
             "group": entity_type["name"]
@@ -88,7 +90,7 @@ def entity_update_callback(data):
     asset = gazu.asset.get_asset(data["entity_id"])
     project = gazu.project.get_project(asset["project_id"])
 
-    os.environ["AVALON_PROJECT"] = project["code"]
+    os.environ["AVALON_PROJECT"] = get_consistent_name(project["name"])
 
     avalon.uninstall()
     avalon.install()
@@ -132,17 +134,10 @@ def project_new_callback(data):
     
     project = gazu.project.get_project(data["project_id"])
 
-    # Ensure project["code"] consistency.
+    # Ensure project["name"] consistency.
     project_name = lib.get_consistent_name(project["name"])
     
-    if project["code"] != project_name:
-        proj = {}
-        proj["code"] = project_name
-        proj["id"] = project["id"]
-        project = gazu.project.update_project(proj)
-        print("Updating Project Code...")
-
-    os.environ["AVALON_PROJECT"] = project["code"]
+    os.environ["AVALON_PROJECT"] = project_name
 
     avalon.uninstall()
     avalon.install()
@@ -159,12 +154,11 @@ def project_new_callback(data):
 
     project_data = {
         "schema": "avalon-core:project-2.0",
-        "name": project["code"],
+        "name": project_name,
         "type": "project",
         "parent": None,
         "data": {
             "label": project["name"],
-            "code": project["code"],
             "fps":  project["fps"],
             "resolution_width": resolution_width,
             "resolution_height": project["resolution"]
@@ -194,16 +188,16 @@ def project_new_callback(data):
 
     # Find the project in Avalon
     avalon_project = avalon.find_one(
-        {"name": lib.get_consistent_name(project["code"]),
+        {"name": lib.get_consistent_name(project["name"]),
         "type": "project"})
 
     # Encode and store the data
     lib.set_project_data(data["project_id"], avalon_project["_id"],
-        avalon_project["data"]['code'])
+        avalon_project['name'])
 
     avalon.uninstall()
 
-    print("Create Project: \"{0} ({1})\"".format(project["name"], project["code"]))
+    print("Create Project: \"{0} ({1})\"".format(project["name"], project["name"]))
 
 def project_update_callback(data):
     """Update a project in Avalon when receiving an project:update event"""
@@ -226,16 +220,9 @@ def project_update_callback(data):
         {"_id": avalon.ObjectId(project_data["id"]),
         "type": "project"})
 
-    # Ensure project["code"] consistency.
+    # Ensure project["name"] consistency.
     project_name = lib.get_consistent_name(project["name"])
     
-    if project["code"] != project_name:
-        proj = {}
-        proj["code"] = project_name
-        proj["id"] = project["id"]
-        project = gazu.project.update_project(proj)
-        print("Updating Project Code...")
-
     # Projects may not have a resolution set
     if project["resolution"]:
         resolution_width = int(int(project["resolution"]) / 9 * 16)
@@ -250,7 +237,6 @@ def project_update_callback(data):
     # Update the Avalon project with new data from Gazu
     avalon_project["name"] = lib.get_consistent_name(project["name"])
     avalon_project["data"]["label"] = project["name"]
-    avalon_project["data"]["code"] = project["code"]
     avalon_project["data"]["fps"] = project["fps"]
     avalon_project["data"]["resolution_width"] = resolution_width
     avalon_project["data"]["resolution_height"] = project["resolution"]
@@ -269,8 +255,8 @@ def project_update_callback(data):
             os.environ["AVALON_PROJECT"], avalon_project["name"]))
         lib.collection_rename(avalon_project["name"])
 
-    lib.set_project_data(data["project_id"], avalon_project["_id"],
-        avalon_project["data"]['code'])
+        lib.set_project_data(data["project_id"], avalon_project["_id"],
+            avalon_project["name"])
 
     print("Updating Project: \"{0} ({1})\"".format(
         avalon_project["data"]["label"], avalon_project["name"]))
