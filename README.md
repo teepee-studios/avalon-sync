@@ -27,13 +27,13 @@ the newly added thing to Kitsu as not existing in Avalon.
 | Asset New | X | X |
 | Asset Update |  |  |
 | Asset Delete | - | - |
-| Shot New |  |  |
+| Shot New |  | X |
 | Shot Update |  |  |
 | Shot Delete | - | - |
-| Sequence New |  |  |
+| Sequence New |  | X |
 | Sequence Update |  |  |
 | Sequence Delete | - | - |
-| Episode New |  |  |
+| Episode New |  | X |
 | Episode Update |  |  |
 | Episode Delete | - | - |
 | Task Type New |  |  |
