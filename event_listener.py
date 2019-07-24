@@ -6,7 +6,6 @@ from avalon import io as avalon
 import lib as lib
 
 
-os.environ["AVALON_PROJECTS"] = r""
 os.environ["AVALON_PROJECT"] = "temp"
 os.environ["AVALON_ASSET"] = "bruce"
 os.environ["AVALON_SILO"] = "assets"
@@ -25,7 +24,7 @@ def entity_new_callback(data):
     asset = gazu.asset.get_asset(data["entity_id"])
     project = gazu.project.get_project(asset["project_id"])
 
-    project_name = get_consistent_name(project["name"])
+    project_name = lib.get_consistent_name(project["name"])
 
     os.environ["AVALON_PROJECT"] = project_name
 
@@ -235,7 +234,7 @@ def project_update_callback(data):
         "label":task["name"]} for task in gazu.task.all_task_types()]
 
     # Update the Avalon project with new data from Gazu
-    avalon_project["name"] = lib.get_consistent_name(project["name"])
+    avalon_project["name"] = project_name
     avalon_project["data"]["label"] = project["name"]
     avalon_project["data"]["fps"] = project["fps"]
     avalon_project["data"]["resolution_width"] = resolution_width
