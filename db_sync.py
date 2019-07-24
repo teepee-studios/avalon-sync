@@ -83,6 +83,22 @@ def main():
                         "parents": asset["parents"]
                     }
                 }
+                
+                if silo == "assets":
+                    data["group"] = entity_type["name"]
+
+                # If the silo is shots, group the shot under the proper sequence 
+                # and episode and hide sequences and episodes in the launcher.
+                elif silo == "shots":
+                    if asset["type"] == "Shot":
+                        layout_data = asset["visualParent"].split("_")
+                        data["data"]["group"] = "{0} {1}".format(layout_data[0].upper(), 
+                            layout_data[1].upper())
+                    elif asset["type"] == "Sequence":
+                        data["data"]["group"] = asset["visualParent"]
+                        data["data"]["visible"] = False
+                    elif asset["type"] == "Episode":
+                        data["data"]["visible"] = False
 
                 if asset.get("visualParent"):
                     data["data"]["visualParent"] = asset["visualParent"]
@@ -141,14 +157,9 @@ def main():
     print("- %d projects" % len(projects))
     print("- %d assets" % objects_count)
 
-    os.environ["AVALON_PROJECTS"] = r""
     os.environ["AVALON_PROJECT"] = "temp"
     os.environ["AVALON_ASSET"] = "bruce"
     os.environ["AVALON_SILO"] = "assets"
-    os.environ["AVALON_CONFIG"] = "polly"
-    os.environ["AVALON_MONGO"] = os.environ.get(
-        "AVALON_MONGO", "mongodb://127.0.0.1:27017"
-    )
 
     existing_projects = {}
     existing_objects = {}
@@ -253,9 +264,9 @@ def main():
             asset["parent"] = avalon.locate([asset["parent"]])
             
             if asset["data"].get("visualParent"):
-                asset["data"]["visualParent"] = avalon.find_one(
-                    {"type": "asset", "name": asset["data"]["visualParent"]}
-                )["_id"]
+                vp = lib.get_consistent_name(asset["data"]["visualParent"])
+                asset_data = avalon.find_one({"type": "asset", "name": vp})
+                asset["data"]["visualParent"] = asset_data["_id"]
             print(
                 "Installing asset: \"{0} / {1}\"".format(
                     project["id"], asset_name
