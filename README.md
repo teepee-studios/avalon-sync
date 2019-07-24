@@ -4,6 +4,18 @@
 This Avalon Sync utils are still in heavy development and have not been fully tested.
 
 
+Avalon Sync uses Gazu to sync Zou to Avalon via the Kitsu API.  
+Some important notes are:  
+* Syncing is only **one** direction, Zou/Kitsu -> to Avalon.  
+* Only new things are **Added** to Avalon and **Update** existing things in Avalon.
+* **Delete** events are *ignored*, nothing is deleted from Avalon.
+* While added things *should* be done in Kitsu/Zou and then synced to Avalon, it's 
+still possible add things via the Avalon Project manager, however if you later add 
+the same thing to Kitsu, you will end up with **duplicates** in Avalon as Avalon 
+Sync will know nothing about what has already been added to Avalon and will treat 
+the newly added thing to Kitsu as not existing in Avalon.  
+
+
 ### Currently support actions
 
 
