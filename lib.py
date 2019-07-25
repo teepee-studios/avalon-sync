@@ -14,7 +14,8 @@ def set_project_data(gazu_project_id, avalon_project_id, avalon_collection):
     # Lookup the Zou Id and Avalon Id key value pair of the asset
 
     # Set the directory where partd stores it's data
-    data_directory = os.path.join(os.environ["PARTD_PATH"], "data")
+    base_directory = os.environ["PARTD_PATH"]
+    data_directory = os.path.join(base_directory, "data")
     directory = os.path.join(data_directory, gazu_project_id)
 
     # Create the data directory for the project if it doesn't exist.
@@ -62,7 +63,8 @@ def set_asset_data(gazu_project_id, gazu_asset_id, avalon_asset_id):
     # Store Zou Id and Avalon Id key value pair of the asset
             
     # Set the directory where partd stores it's data
-    data_directory = os.path.join(os.environ["PARTD_PATH"], "data")
+    base_directory = os.environ["PARTD_PATH"]
+    data_directory = os.path.join(base_directory, "data")
     directory = os.path.join(data_directory, gazu_project_id)
 
     # Create the data directory for the project if it doesn't exist.
@@ -89,19 +91,17 @@ def get_asset_data(gazu_project_id, gazu_asset_id):
     # Lookup the Zou Id and Avalon Id key value pair of the asset
 
     # Set the directory where partd stores it's data
-    directory = os.path.join(os.environ["PARTD_PATH"], "data", gazu_project_id)
+    base_directory = os.environ["PARTD_PATH"]
+    directory = os.path.join(base_directory, "data", gazu_project_id)
 
     # Init partd
-    p = partd.Pickle(partd.File(directory))
-
+    p = partd.File(directory)
+    
     if not p.get(gazu_asset_id):
         return False
     else:
         # Get the Avalon asset ID from partd
-        project_info = p.get(gazu_asset_id)
-        project_data = {
-            "id": project_info[0]
-        }
+        project_data = bytes.decode(p.get(gazu_asset_id), "utf-8")
         return project_data
 
 
