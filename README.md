@@ -25,7 +25,7 @@ the newly added thing to Kitsu as not existing in Avalon.
 | Project Update | X | X |
 | Project Delete | - | - |
 | Asset New | X | X |
-| Asset Update |  |  |
+| Asset Update |  | X |
 | Asset Delete | - | - |
 | Shot New |  | X |
 | Shot Update |  |  |
