@@ -10,35 +10,17 @@ def get_consistent_name(name):
     """Converts potentially inconsistent names."""
     return name.replace(" ", "_").lower()
 
-def get_project_data(project_id):
-    # Lookup the Zou Id and Avalon Id key value pair of the asset
-
-    # Set the directory where partd stores it's data
-    directory = os.environ["PARTD_PATH"]
-    directory = os.path.join(directory, "data", project_id)
-
-    # Init partd
-    p = partd.Pickle(partd.File(directory))
-    if not p.get(project_id):
-        return False
-    else:
-        # Get the Avalon asset ID from partd
-        project_info = p.get(project_id)
-        project_data = {
-            "id": project_info[0],
-            "collection": project_info[1]
-        }
-        return project_data
-
 def set_project_data(gazu_project_id, avalon_project_id, avalon_collection):
     # Lookup the Zou Id and Avalon Id key value pair of the asset
 
     # Set the directory where partd stores it's data
-    directory = os.environ["PARTD_PATH"]
-    directory = os.path.join(directory, "data", gazu_project_id)
+    data_directory = os.path.join(os.environ["PARTD_PATH"], "data")
+    directory = os.path.join(data_directory, gazu_project_id)
 
     # Create the data directory for the project if it doesn't exist.
     if not os.path.exists(directory):
+        if not os.path.exists(data_directory):
+            os.mkdir(data_directory)
         os.mkdir(directory)
 
     # Init partd
@@ -56,15 +38,37 @@ def set_project_data(gazu_project_id, avalon_project_id, avalon_collection):
     p.append(key_values)
     print("Adding new project info for: {0}".format(avalon_collection))
 
+def get_project_data(project_id):
+    # Lookup the Zou Id and Avalon Id key value pair of the asset
+
+    # Set the directory where partd stores it's data
+    directory = os.path.join(os.environ["PARTD_PATH"], "data", project_id)
+
+    # Init partd
+    p = partd.Pickle(partd.File(directory))
+
+    if not p.get(project_id):
+        return False
+    else:
+        # Get the Avalon asset ID from partd
+        project_info = p.get(project_id)
+        project_data = {
+            "id": project_info[0],
+            "collection": project_info[1]
+        }
+        return project_data
+
 def set_asset_data(gazu_project_id, gazu_asset_id, avalon_asset_id):
     # Store Zou Id and Avalon Id key value pair of the asset
             
     # Set the directory where partd stores it's data
-    directory = os.environ["PARTD_PATH"]
-    directory = os.path.join(directory, "data", gazu_project_id)
+    data_directory = os.path.join(os.environ["PARTD_PATH"], "data")
+    directory = os.path.join(data_directory, gazu_project_id)
 
     # Create the data directory for the project if it doesn't exist.
     if not os.path.exists(directory):
+        if not os.path.exists(data_directory):
+            os.mkdir(data_directory)
         os.mkdir(directory)
 
     # Init partd
@@ -80,6 +84,25 @@ def set_asset_data(gazu_project_id, gazu_asset_id, avalon_asset_id):
     value = bytes(str(avalon_asset_id), "utf-8")
     key_values = {gazu_asset_id: value}
     p.append(key_values)
+
+def get_asset_data(gazu_project_id, gazu_asset_id):
+    # Lookup the Zou Id and Avalon Id key value pair of the asset
+
+    # Set the directory where partd stores it's data
+    directory = os.path.join(os.environ["PARTD_PATH"], "data", gazu_project_id)
+
+    # Init partd
+    p = partd.Pickle(partd.File(directory))
+
+    if not p.get(gazu_asset_id):
+        return False
+    else:
+        # Get the Avalon asset ID from partd
+        project_info = p.get(gazu_asset_id)
+        project_data = {
+            "id": project_info[0]
+        }
+        return project_data
 
 
 def collection_rename(*args, **kwargs):
