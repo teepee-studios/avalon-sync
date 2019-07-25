@@ -30,14 +30,12 @@ def main():
         shots = []
         for episode in (gazu.shot.all_episodes_for_project(project) or []):
             episode["code"] = lib.get_consistent_name(episode["name"])
-            episode["parent"] = project
             # Faking a parent for better hierarchy structure, until folders are
             # supported in Kitsu.
             episode["parents"] = ["episodes"]
             episodes.append(episode)
             for sequence in gazu.shot.all_sequences_for_episode(episode):
                 sequence["code"] = lib.get_consistent_name(sequence["name"])
-                sequence["parent"] = episode
                 sequence["parents"] = episode["parents"] + [episode["code"]]
                 sequence["label"] = sequence["name"]
                 sequence["name"] = "{0}_{1}".format(
@@ -47,7 +45,6 @@ def main():
                 sequences.append(sequence)
                 for shot in gazu.shot.all_shots_for_sequence(sequence):
                     shot["code"] = lib.get_consistent_name(shot["name"])
-                    shot["parent"] = sequence
                     shot["parents"] = sequence["parents"] + [sequence["code"]]
                     shot["label"] = shot["name"]
                     shot["name"] = "{0}_{1}_{2}".format(
@@ -69,7 +66,7 @@ def main():
                 entity_type = gazu.entity.get_entity_type(
                     asset["entity_type_id"]
                 )
-
+                print(asset)
                 data = {
                     "id": asset["id"],
                     "schema": "avalon-core:asset-2.0",
@@ -89,11 +86,16 @@ def main():
 
                 # If the silo is shots, group the shot under the proper sequence 
                 # and episode and hide sequences and episodes in the launcher.
+                # Add frame data for shots.
                 elif silo == "shots":
                     if asset["type"] == "Shot":
                         layout_data = asset["visualParent"].split("_")
                         data["data"]["group"] = "{0} {1}".format(layout_data[0].upper(), 
                             layout_data[1].upper())
+                        if asset.get("frame_in"):
+                            data["data"]["edit_in"] = asset["data"]["frame_in"]
+                        if asset.get("frame_out"):
+                            data["data"]["edit_out"] = asset["data"]["frame_out"] 
                     elif asset["type"] == "Sequence":
                         data["data"]["group"] = asset["visualParent"]
                         data["data"]["visible"] = False
@@ -186,7 +188,7 @@ def main():
             avalon_project = avalon.find_one(
                 {"_id": avalon.ObjectId(project_info["id"]),
                 "type": "project"})
-            print
+            
             # Update the Avalon project with new data from Gazu
             print("Updating Project: \"{0} ({1})\"".format(project["data"]["label"], 
                 name))
