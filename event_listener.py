@@ -10,7 +10,7 @@ os.environ["AVALON_PROJECT"] = "temp"
 os.environ["AVALON_ASSET"] = "bruce"
 os.environ["AVALON_SILO"] = "assets"
 
-def asset_new_callback(data):
+def asset_create_callback(data):
     """
     On receiving a entity:new event, insert the asset into the 
     Avalon mongodb and store Zou id and Avalon id key value pair 
@@ -21,7 +21,7 @@ def asset_new_callback(data):
     gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
     gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
     
-    asset = gazu.asset.get_asset(data["entity_id"])
+    asset = gazu.asset.get_asset(data["asset_id"])
     project = gazu.project.get_project(asset["project_id"])
 
     project_name = lib.get_consistent_name(project["name"])
@@ -63,8 +63,8 @@ def asset_new_callback(data):
 
     # Check if the asset is already stored and delete it if it is.
     # (We're making the assumption that IDs supplied to us are unique).
-    if p.get(data["entity_id"]):
-        p.delete(data["entity_id"])
+    if p.get(data["asset_id"]):
+        p.delete(data["asset_id"])
 
     # Find the asset in Avalon
     avalon_asset = avalon.find_one(
@@ -73,12 +73,13 @@ def asset_new_callback(data):
 
     # Encode and store the data as a utf-8 bytes
     value = bytes(str(avalon_asset["_id"]), "utf-8")
-    key_values = {data["entity_id"]: value}
+    key_values = {data["asset_id"]: value}
     p.append(key_values)
 
     avalon.uninstall()
 
-    print("Create Asset \"{0}\" in Project \"{1} ({2})\"".format(asset["name"], project["name"], project["code"]))
+    print("Create Asset \"{0}\" in Project \"{1} ({2})\"".format(asset["name"], 
+        project["name"], project["code"]))
 
 def asset_update_callback(data):
     """Update an asset name when receiving an entity:update event"""
@@ -86,7 +87,7 @@ def asset_update_callback(data):
     gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
     gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
     
-    asset = gazu.asset.get_asset(data["entity_id"])
+    asset = gazu.asset.get_asset(data["asset_id"])
     project = gazu.project.get_project(asset["project_id"])
 
     os.environ["AVALON_PROJECT"] = get_consistent_name(project["name"])
@@ -94,19 +95,8 @@ def asset_update_callback(data):
     avalon.uninstall()
     avalon.install()
 
-
-    # Lookup the Zou Id and Avalon Id key value pair of the asset
-
-    # Set the directory where partd stores it's data
-    directory = os.environ["PARTD_PATH"]
-    directory = os.path.join(directory, "data", project["id"])
-
-    # Init partd
-    p = partd.File(directory)
-
-    # Get the Avalon asset ID from partd
-    asset_id = p.get(data["entity_id"])
-    asset_id = bytes.decode(asset_id, "utf-8")
+    # Get Avalon Asset Id.
+    asset_id = lib.get_asset_data(project["id"], data["asset_id"])
 
     # Find the asset in Avalon
     avalon_asset = avalon.find_one(
@@ -206,7 +196,7 @@ def project_update_callback(data):
     
     project = gazu.project.get_project(data["project_id"])
 
-    # Get the Avalon asset ID from partd
+    # Get the Avalon project ID from partd
     project_data = lib.get_project_data(data["project_id"])
 
     os.environ["AVALON_PROJECT"] = project_data["collection"]
@@ -265,7 +255,7 @@ gazu.client.set_host(os.environ["GAZU_URL"])
 event_client = gazu.events.init()
 
 # Asset Event Types
-gazu.events.add_listener(event_client, "asset:new", asset_new_callback)
+gazu.events.add_listener(event_client, "asset:create", asset_create_callback)
 gazu.events.add_listener(event_client, "asset:update", asset_update_callback)
 
 # Project Event Types
