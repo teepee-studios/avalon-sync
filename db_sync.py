@@ -104,7 +104,7 @@ def main():
                         data["data"]["visible"] = False
                     data["asset_type"] = asset["type"]
 
-                if asset.get("visualParent"):
+                if "visualParent" in asset:
                     data["data"]["visualParent"] = asset["visualParent"]
 
                 entities[data["name"]] = data
@@ -173,19 +173,10 @@ def main():
             avalon.uninstall()
             avalon.install()
 
-            # Collect assets
-            print("Fetching Avalon assets..")
-            assets = {}
-            for asset in avalon.find({"type": "asset"}):
-                assets[asset["name"]] = asset
-
-            existing_objects[project["id"]] = assets
-            
             # Find the project in Avalon
             avalon_project = {}
             avalon_project = avalon.find_one(
-                {"_id": avalon.ObjectId(project_info["id"]),
-                "type": "project"})
+                {"_id": avalon.ObjectId(project_info["id"]), "type": "project"})
             
             # Update the Avalon project with new data from Gazu
             print("Updating Project: \"{0} ({1})\"".format(project["data"]["label"], 
@@ -243,14 +234,17 @@ def main():
         os.environ["AVALON_PROJECT"] = project_info["collection"]
         avalon.uninstall()
         avalon.install()
-
+        
         for asset_name, asset in assets.items():
             asset_id = lib.get_asset_data(project["id"], asset["id"])
             
             if asset_id:
                 # Update Assets in Avalon with new data from Gazu
-                existing_project = existing_objects[project["id"]]
-                avalon_asset = existing_project[asset_name]
+
+                # Find asset in Avalon
+                avalon_asset= {}
+                avalon_asset = avalon.find_one(
+                    {"_id": avalon.ObjectId(asset_id), "type": "asset"})
                 
                 print("Updating Asset: {0} ({1})".format(avalon_asset["data"]["label"],
                     avalon_asset["name"]))
@@ -258,9 +252,12 @@ def main():
                 if avalon_asset["name"] != asset["name"]:
                     print("Updating asset name from {0} to {1}".format(
                         avalon_asset["name"], asset["name"]))
-
+                
                 avalon_asset["name"] = asset["name"]
                 avalon_asset["data"]["label"] = asset["data"]["label"]
+                avalon_asset["data"]["group"] = asset["data"]["group"]
+                avalon_asset["data"]["parents"] = asset["data"]["parents"]
+
                 if avalon_asset["silo"] == "shots" and asset["asset_type"] == "Shot":
                     if asset["data"] != None:
                         if "edit_in" in asset["data"]:
@@ -269,14 +266,14 @@ def main():
                             avalon_asset["data"]["edit_out"] = asset["data"]["edit_out"] 
 
                 avalon.replace_one(
-                    {"type": "asset", "name": asset_name},
+                    {"_id": avalon.ObjectId(asset_id), "type": "asset"},
                     avalon_asset
                     )
             else:
                 # Insert new Assets into Avalon
                 asset["parent"] = avalon.locate([asset["parent"]])
                 
-                if asset["data"].get("visualParent"):
+                if "visualParent" in asset["data"]:
                     visual_parent = lib.get_consistent_name(asset["data"]["visualParent"])
                     asset_data = avalon.find_one({"type": "asset", "name": visual_parent})
                     asset["data"]["visualParent"] = asset_data["_id"]
@@ -285,9 +282,13 @@ def main():
                         project["id"], asset_name
                     )
                 )
-                entity_id = asset.pop("id")
-                if asset.get("asset_type"):
+
+                # Remove Gazu ID and asset_type from asset so it doesn't go 
+                # into the Avalon DB.
+                asset_gazu_id = asset.pop("id")
+                if "asset_type" in asset:
                     asset.pop("asset_type")
+
                 # Inset asset into Avalon DB
                 avalon.insert_one(asset)
 
@@ -295,8 +296,8 @@ def main():
                     {"name": lib.get_consistent_name(asset["name"]),
                     "type": "asset"})
 
-                # Encode and store the data as a utf-8 bytes
-                lib.set_asset_data(project["id"], entity_id, avalon_asset["_id"])
+                # Encode and store the data
+                lib.set_asset_data(project["id"], asset_gazu_id, avalon_asset["_id"])
 
     print("Success")
 
