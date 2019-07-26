@@ -31,10 +31,10 @@ the newly added thing to Kitsu as not existing in Avalon.
 | Shot Update |  | X |
 | Shot Delete | - | - |
 | Sequence New |  | X |
-| Sequence Update |  |  |
+| Sequence Update |  | X |
 | Sequence Delete | - | - |
 | Episode New |  | X |
-| Episode Update |  |  |
+| Episode Update |  | X |
 | Episode Delete | - | - |
 | Task Type New |  |  |
 | Task Type Update |  |  |
