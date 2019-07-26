@@ -10,7 +10,7 @@ os.environ["AVALON_PROJECT"] = "temp"
 os.environ["AVALON_ASSET"] = "bruce"
 os.environ["AVALON_SILO"] = "assets"
 
-def entity_new_callback(data):
+def asset_new_callback(data):
     """
     On receiving a entity:new event, insert the asset into the 
     Avalon mongodb and store Zou id and Avalon id key value pair 
@@ -80,7 +80,7 @@ def entity_new_callback(data):
 
     print("Create Asset \"{0}\" in Project \"{1} ({2})\"".format(asset["name"], project["name"], project["code"]))
 
-def entity_update_callback(data):
+def asset_update_callback(data):
     """Update an asset name when receiving an entity:update event"""
     # Log in to API
     gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
@@ -265,8 +265,8 @@ gazu.client.set_host(os.environ["GAZU_URL"])
 event_client = gazu.events.init()
 
 # Asset Event Types
-gazu.events.add_listener(event_client, "entity:new", entity_new_callback)
-gazu.events.add_listener(event_client, "entity:update", entity_update_callback)
+gazu.events.add_listener(event_client, "asset:new", asset_new_callback)
+gazu.events.add_listener(event_client, "asset:update", asset_update_callback)
 
 # Project Event Types
 gazu.events.add_listener(event_client, "project:new", project_new_callback)
