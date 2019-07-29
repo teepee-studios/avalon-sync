@@ -37,9 +37,9 @@ the newly added thing to Kitsu as not existing in Avalon.
 | Episode New |  | X |
 | Episode Update |  | X |
 | Episode Delete | - | - |
-| Task New |  |  |
-| Task Update |  |  |
-| Task Delete |  |  |
+| Task New |  | X |
+| Task Update |  | X |
+| Task Delete |  | X |
 | Task Type New |  |  |
 | Task Type Update |  |  |
 | Task Type Delete |  |  |
