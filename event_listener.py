@@ -12,8 +12,8 @@ os.environ["AVALON_SILO"] = "assets"
 
 def asset_create_callback(data):
     """
-    On receiving a entity:new event, insert the asset into the 
-    Avalon mongodb and store Zou id and Avalon id key value pair 
+    On receiving a asset:create event, insert the asset into the 
+    Avalon mongodb and store Zou Id and Avalon Id key value pair 
     for using in asset update events.
     """
 
@@ -81,6 +81,7 @@ def asset_create_callback(data):
     print("Create Asset \"{0}\" in Project \"{1} ({2})\"".format(asset["name"], 
         project["name"], project["code"]))
 
+
 def asset_update_callback(data):
     """Update an asset name when receiving an entity:update event"""
     # Log in to API
@@ -117,6 +118,7 @@ def asset_update_callback(data):
         "type": "asset"}, avalon_asset)
 
     avalon.uninstall()
+
 
 def project_new_callback(data):
     """
@@ -196,6 +198,7 @@ def project_new_callback(data):
 
     print("Create Project: \"{0} ({1})\"".format(project["name"], project["name"]))
 
+
 def project_update_callback(data):
     """Update a project in Avalon when receiving an project:update event"""
     # Log in to API
@@ -257,7 +260,62 @@ def project_update_callback(data):
 
     print("Updating Project: \"{0} ({1})\"".format(
         avalon_project["data"]["label"], avalon_project["name"]))
+
+
+def shot_new_callback(data):
+    """
+    On receiving a shot:new event, insert the shot into the 
+    Avalon mongodb and store Zou Id and Avalon Id key value pair 
+    for using in asset update events.
+    """
+
+    # Log in to API
+    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
+    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
     
+    shot = gazu.shot.get_shot(data["shot_id"])
+    project = gazu.project.get_project(shot["project_id"])
+
+    project_name = lib.get_consistent_name(project["name"])
+    episode_name = lib.get_consistent_name(shot["episode_name"])
+    sequence_name = lib.get_consistent_name(shot["sequence_name"])
+    shot_name = lib.get_consistent_name(shot["name"])
+    visualParent = [project_name, "{0}_{1}".format(episode_name, 
+                sequence_name)]
+
+    os.environ["AVALON_PROJECT"] = project_name
+
+    avalon.uninstall()
+    avalon.install()
+
+    shot_data = {
+        "schema": "avalon-core:asset-2.0",
+        "name": "{0}_{1}_{2}".format(episode_name, sequence_name, shot_name),
+        "silo": "shots",
+        "type": "asset",
+        "parent": avalon.locate([project_name]),
+        "data": {
+            "label": shot["name"],
+            "group": "{0} {1}".format(shot["episode_name"].upper(), 
+                shot["sequence_name"].upper()),
+            "visualParent": avalon.locate(visualParent)
+        }
+    }
+
+    # Inset shot into Avalon DB
+    avalon.insert_one(shot_data)
+
+    # Get the Id of the shot we just inserted into Avalon
+    avalon_shot = avalon.find_one(
+        {"name": lib.get_consistent_name(shot_data["name"]),
+        "type": "asset"})
+
+    # Encode and store the Gazu Id and Avalon Id
+    lib.set_asset_data(project["id"], data["shot_id"], avalon_shot["_id"])
+
+
+
+
 # Init Gazu
 gazu.client.set_host(os.environ["GAZU_URL"])
 event_client = gazu.events.init()
@@ -269,5 +327,10 @@ gazu.events.add_listener(event_client, "asset:update", asset_update_callback)
 # Project Event Types
 gazu.events.add_listener(event_client, "project:new", project_new_callback)
 gazu.events.add_listener(event_client, "project:update", project_update_callback)
+
+# Shot Event Types
+gazu.events.add_listener(event_client, "shot:new", shot_new_callback)
+
+# Task Event Types
 
 gazu.events.run_client(event_client)
