@@ -40,7 +40,6 @@ def main():
             episodes.append(episode)
             for sequence in gazu.shot.all_sequences_for_episode(episode):
                 sequence["code"] = lib.get_consistent_name(sequence["name"])
-                sequence["parents"] = episode["parents"] + [episode["code"]]
                 sequence["label"] = sequence["name"]
                 sequence["name"] = "{0}_{1}".format(
                     episode["code"], sequence["code"]
@@ -49,7 +48,6 @@ def main():
                 sequences.append(sequence)
                 for shot in gazu.shot.all_shots_for_sequence(sequence):
                     shot["code"] = lib.get_consistent_name(shot["name"])
-                    shot["parents"] = sequence["parents"] + [sequence["code"]]
                     shot["label"] = shot["name"]
                     shot["name"] = "{0}_{1}_{2}".format(
                         episode["code"], sequence["code"], shot["code"]
@@ -67,9 +65,7 @@ def main():
         entities = {}
         for assets, silo in silos:
             for asset in assets:
-                entity_type = gazu.entity.get_entity_type(
-                    asset["entity_type_id"]
-                )
+                entity_type = gazu.entity.get_entity_type(asset["entity_type_id"])
 
                 data = {
                     "id": asset["id"],
@@ -266,7 +262,6 @@ def main():
                 avalon_asset["name"] = asset["name"]
                 avalon_asset["data"]["label"] = asset["data"]["label"]
                 avalon_asset["data"]["group"] = asset["data"]["group"]
-                avalon_asset["data"]["parents"] = asset["data"]["parents"]
 
                 if avalon_asset["silo"] == "shots" and asset["asset_type"] == "Shot":
                     if asset["data"] != None:
@@ -280,8 +275,7 @@ def main():
 
                 avalon.replace_one(
                     {"_id": avalon.ObjectId(asset_id), "type": "asset"},
-                    avalon_asset
-                    )
+                    avalon_asset)
             else:
                 # Insert new Assets into Avalon
                 asset["parent"] = avalon.locate([asset["parent"]])
