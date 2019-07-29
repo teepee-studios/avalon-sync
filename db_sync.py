@@ -9,9 +9,12 @@ def main():
     projects = {}
     objects = {}
     objects_count = 0
+
+    print("Get Project, Task, Asset and Shot Data...")
+
     tasks = [{"name": lib.get_consistent_name(task["name"]), 
         "label":task["name"]} for task in gazu.task.all_task_types()]
-    print("Get Tasks...")
+    
     for project in gazu.project.all_projects():
         # Ensure project["name"] consistency.
         project_name = lib.get_consistent_name(project["name"])
@@ -22,6 +25,7 @@ def main():
             # Faking a parent for better hierarchy structure, until folders are
             # supported in Kitsu.
             asset["parents"] = ["assets"]
+            asset["tasks"] = gazu.task.all_tasks_for_asset(asset)
             assets.append(asset)
 
         # Collect shots and parents.
@@ -85,13 +89,13 @@ def main():
                     data["data"]["group"] = entity_type["name"]
 
                 # If the silo is shots, group the shot under the proper sequence 
-                # and episode and hide sequences and episodes in the launcher.
-                # Add frame data for shots.
+                # and episode and hide sequences and episodes in the launcher.            
                 elif silo == "shots":
                     if asset["type"] == "Shot":
                         layout_data = asset["visualParent"].split("_")
                         data["data"]["group"] = "{0} {1}".format(layout_data[0].upper(), 
                             layout_data[1].upper())
+                        # Add frame data for shots.
                         if asset["data"] != None:
                             if "frame_in" in asset["data"]:
                                 data["data"]["edit_in"] = asset["data"]["frame_in"]
@@ -106,6 +110,12 @@ def main():
 
                 if "visualParent" in asset:
                     data["data"]["visualParent"] = asset["visualParent"]
+                
+                if asset["data"] != None:
+                    if "tasks" in asset:
+                        data["data"]["tasks"] = []
+                        for task in asset["tasks"]:
+                            data["data"]["tasks"].append(lib.get_consistent_name(task["task_type_name"]))
 
                 entities[data["name"]] = data
 
@@ -242,7 +252,7 @@ def main():
                 # Update Assets in Avalon with new data from Gazu
 
                 # Find asset in Avalon
-                avalon_asset= {}
+                avalon_asset = {}
                 avalon_asset = avalon.find_one(
                     {"_id": avalon.ObjectId(asset_id), "type": "asset"})
                 
@@ -264,6 +274,9 @@ def main():
                             avalon_asset["data"]["edit_in"] = asset["data"]["edit_in"]
                         if "edit_out" in asset["data"]:
                             avalon_asset["data"]["edit_out"] = asset["data"]["edit_out"] 
+                
+                if "tasks" in asset["data"]:
+                    avalon_asset["data"]["tasks"] = asset["data"]["tasks"]
 
                 avalon.replace_one(
                     {"_id": avalon.ObjectId(asset_id), "type": "asset"},
@@ -291,12 +304,13 @@ def main():
 
                 # Inset asset into Avalon DB
                 avalon.insert_one(asset)
-
+                
+                # Get the Id of the asset we just inserted into Avalon
                 avalon_asset = avalon.find_one(
                     {"name": lib.get_consistent_name(asset["name"]),
                     "type": "asset"})
 
-                # Encode and store the data
+                # Encode and store the Gazu Id and Avalon Id
                 lib.set_asset_data(project["id"], asset_gazu_id, avalon_asset["_id"])
 
     print("Success")
