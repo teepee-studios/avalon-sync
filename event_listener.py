@@ -90,25 +90,33 @@ def asset_update_callback(data):
     asset = gazu.asset.get_asset(data["asset_id"])
     project = gazu.project.get_project(asset["project_id"])
 
-    os.environ["AVALON_PROJECT"] = get_consistent_name(project["name"])
+    os.environ["AVALON_PROJECT"] = lib.get_consistent_name(project["name"])
 
     avalon.uninstall()
     avalon.install()
 
     # Get Avalon Asset Id.
     asset_id = lib.get_asset_data(project["id"], data["asset_id"])
+    # Get asset Type
+    entity_type = gazu.entity.get_entity_type(asset["entity_type_id"])
 
     # Find the asset in Avalon
     avalon_asset = avalon.find_one(
         {"_id": avalon.ObjectId(asset_id),
         "type": "asset"})
 
-    print(avalon_asset)
+    # Ensure asset["name"] consistency.
+    asset_name = lib.get_consistent_name(asset["name"])
 
-    #avalon.replace_once(
-    #    {"_id": avalon.ObjectId(asset_id),
-    #    "type": "asset"}, )
-    #)
+    avalon_asset["name"] = asset_name
+    avalon_asset["data"]["label"] = asset["name"]
+    avalon_asset["data"]["group"] = entity_type["name"]
+
+    avalon.replace_one(
+        {"_id": avalon.ObjectId(asset_id),
+        "type": "asset"}, avalon_asset)
+
+    avalon.uninstall()
 
 def project_new_callback(data):
     """
@@ -250,7 +258,7 @@ def project_update_callback(data):
     print("Updating Project: \"{0} ({1})\"".format(
         avalon_project["data"]["label"], avalon_project["name"]))
     
-
+# Init Gazu
 gazu.client.set_host(os.environ["GAZU_URL"])
 event_client = gazu.events.init()
 
