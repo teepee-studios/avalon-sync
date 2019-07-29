@@ -77,7 +77,6 @@ def main():
                     "data": {
                         "label": asset.get("label", asset["name"]),
                         "group": entity_type["name"],
-                        "parents": asset["parents"]
                     }
                 }
                 
