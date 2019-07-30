@@ -26,25 +26,26 @@ the newly added thing to Kitsu as not existing in Avalon.
 | Project Update | X | X |
 | Project Delete | - | - |
 | Asset New | X | X |
-| Asset Update |  | X |
+| Asset Update | X | X |
 | Asset Delete | - | - |
-| Shot New |  | X |
-| Shot Update |  | X |
+| Shot New | X | X |
+| Shot Update | X | X |
 | Shot Delete | - | - |
-| Sequence New |  | X |
-| Sequence Update |  | X |
+| Sequence New | O | X |
+| Sequence Update | O | X |
 | Sequence Delete | - | - |
-| Episode New |  | X |
-| Episode Update |  | X |
+| Episode New | O | X |
+| Episode Update | O | X |
 | Episode Delete | - | - |
-| Task New |  | X |
-| Task Update |  | X |
-| Task Delete |  | X |
-| Task Type New |  |  |
-| Task Type Update |  |  |
-| Task Type Delete |  |  |
+| Task New | X | X |
+| Task Update | O | X |
+| Task Delete | O | X |
+| Task Type New | O | X |
+| Task Type Update | O | X |
+| Task Type Delete | O | - |
 
 Cells with X are supported Action Types.  
+Cells with O are not needed or can't be handled by that script.
 Blank cells are Action Types that are not yet supported.  
 Cells with - are Action Types that will not be supported.  
 
