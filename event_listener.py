@@ -307,9 +307,13 @@ def shot_update_callback(data):
     
     shot = gazu.shot.get_shot(data["shot_id"])
     project = gazu.project.get_project(shot["project_id"])
+
+    project_name = lib.get_consistent_name(project["name"])
     episode_name = lib.get_consistent_name(shot["episode_name"])
     sequence_name = lib.get_consistent_name(shot["sequence_name"])
     shot_name = lib.get_consistent_name(shot["name"])
+    visualParent = [project_name, "{0}_{1}".format(episode_name, 
+                sequence_name)]
 
     os.environ["AVALON_PROJECT"] = lib.get_consistent_name(project["name"])
 
@@ -326,11 +330,11 @@ def shot_update_callback(data):
         {"_id": avalon.ObjectId(shot_id),
         "type": "asset"})
 
-
     avalon_shot["name"] = "{0}_{1}_{2}".format(episode_name, sequence_name, shot_name)
     avalon_shot["data"]["label"] = shot["name"]
     avalon_shot["data"]["group"] = "{0} {1}".format(shot["episode_name"].upper(), 
                 shot["sequence_name"].upper())
+    avalon_shot["data"]["visualParent"] = avalon.locate(visualParent)
 
     if shot["data"] != None:
         if "frame_in" in shot["data"]:
@@ -344,7 +348,7 @@ def shot_update_callback(data):
 
     avalon.uninstall()
 
-    print("Updated Shot \"{0}\" in Project \"{1}\"".format(shot["name"], 
+    print("Updated Shot \"{0}\" in Project \"{1}\"".format(avalon_shot["name"], 
         project["name"]))
 
 
