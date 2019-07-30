@@ -87,9 +87,7 @@ def main():
                 # and episode and hide sequences and episodes in the launcher.            
                 elif silo == "shots":
                     if asset["type"] == "Shot":
-                        layout_data = asset["visualParent"].split("_")
-                        data["data"]["group"] = "{0} {1}".format(layout_data[0].upper(), 
-                            layout_data[1].upper())
+                        data["data"]["group"] = asset["visualParent"].upper().replace("_", " ")
                         # Add frame data for shots.
                         if asset["data"] != None:
                             if "frame_in" in asset["data"]:
