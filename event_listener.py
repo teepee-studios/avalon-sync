@@ -93,8 +93,7 @@ def asset_update_callback(data):
     avalon_asset["data"]["group"] = entity_type["name"]
 
     avalon.replace_one(
-        {"_id": avalon.ObjectId(asset_id),
-        "type": "asset"}, avalon_asset)
+        {"_id": avalon.ObjectId(asset_id), "type": "asset"}, avalon_asset)
 
     avalon.uninstall()
 
@@ -352,6 +351,53 @@ def shot_update_callback(data):
         project["name"]))
 
 
+def task_new_callback(data):
+    """
+    On receiving a task:new event, add a task to an asset in the 
+    Avalon mongodb.
+    """
+
+    # Log in to API
+    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
+    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
+    
+    task = gazu.task.get_task(data["task_id"])
+    entity = task["entity"]
+    project = task["project"]
+    task_type = task["task_type"]
+
+    project_name = lib.get_consistent_name(project["name"])
+    task_name = lib.get_consistent_name(task_type["name"])
+
+    # Get Avalon Asset Id.
+    entity_id = lib.get_asset_data(project["id"], entity["id"])
+
+    os.environ["AVALON_PROJECT"] = project_name
+
+    avalon.uninstall()
+    avalon.install()
+
+    # Find the asset in Avalon
+    avalon_entity = avalon.find_one(
+        {"_id": avalon.ObjectId(entity_id),
+        "type": "asset"})
+
+    if avalon_entity["data"] != None:
+        if "tasks" in avalon_entity["data"]:
+            avalon_entity["data"]["tasks"].append(task_name)
+        else:
+            avalon_entity["data"]["tasks"] = [task_name]
+    else:
+        avalon_entity["data"]["tasks"] = [task_name]
+
+    avalon.replace_one(
+        {"_id": avalon.ObjectId(entity_id), "type": "asset"}, avalon_entity)
+
+    avalon.uninstall()
+
+    print("Added new \"{2}\" Task to \"{0}\" in Project \"{1}\""
+        .format(avalon_entity["name"], project["name"], task_type["name"]))
+
 
 
 
@@ -372,5 +418,7 @@ gazu.events.add_listener(event_client, "shot:new", shot_new_callback)
 gazu.events.add_listener(event_client, "shot:update", shot_update_callback)
 
 # Task Event Types
+gazu.events.add_listener(event_client, "task:new", task_new_callback)
+
 
 gazu.events.run_client(event_client)
