@@ -62,7 +62,7 @@ def asset_create_callback(data):
 
 
 def asset_update_callback(data):
-    """Update an asset name when receiving an entity:update event"""
+    """Update an asset name when receiving an asset:update event"""
     # Log in to API
     gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
     gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
@@ -299,6 +299,56 @@ def shot_new_callback(data):
         project["name"]))
 
 
+def shot_update_callback(data):
+    """Update an shot name when receiving an shot:update event"""
+    # Log in to API
+    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
+    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
+    
+    shot = gazu.shot.get_shot(data["shot_id"])
+    project = gazu.project.get_project(shot["project_id"])
+    episode_name = lib.get_consistent_name(shot["episode_name"])
+    sequence_name = lib.get_consistent_name(shot["sequence_name"])
+    shot_name = lib.get_consistent_name(shot["name"])
+
+    os.environ["AVALON_PROJECT"] = lib.get_consistent_name(project["name"])
+
+    avalon.uninstall()
+    avalon.install()
+
+    # Get Avalon Shot Id.
+    shot_id = lib.get_asset_data(project["id"], data["shot_id"])
+    # Get shot Type
+    entity_type = gazu.entity.get_entity_type(shot["entity_type_id"])
+
+    # Find the asset in Avalon
+    avalon_shot = avalon.find_one(
+        {"_id": avalon.ObjectId(shot_id),
+        "type": "asset"})
+
+
+    avalon_shot["name"] = "{0}_{1}_{2}".format(episode_name, sequence_name, shot_name)
+    avalon_shot["data"]["label"] = shot["name"]
+    avalon_shot["data"]["group"] = "{0} {1}".format(shot["episode_name"].upper(), 
+                shot["sequence_name"].upper())
+
+    if shot["data"] != None:
+        if "frame_in" in shot["data"]:
+            avalon_shot["data"]["edit_in"] = shot["data"]["frame_in"]
+        if "frame_out" in shot["data"]:
+            avalon_shot["data"]["edit_out"] = shot["data"]["frame_out"] 
+
+    avalon.replace_one(
+        {"_id": avalon.ObjectId(shot_id),
+        "type": "asset"}, avalon_shot)
+
+    avalon.uninstall()
+
+    print("Updated Shot \"{0}\" in Project \"{1}\"".format(shot["name"], 
+        project["name"]))
+
+
+
 
 
 # Init Gazu
@@ -315,6 +365,7 @@ gazu.events.add_listener(event_client, "project:update", project_update_callback
 
 # Shot Event Types
 gazu.events.add_listener(event_client, "shot:new", shot_new_callback)
+gazu.events.add_listener(event_client, "shot:update", shot_update_callback)
 
 # Task Event Types
 
