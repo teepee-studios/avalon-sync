@@ -47,39 +47,18 @@ def asset_create_callback(data):
     # Inset asset into Avalon DB
     avalon.insert_one(asset_data)
 
-
-    # Store Zou Id and Avalon Id key value pair of the asset
-
-    # Set the directory where partd stores it's data
-    directory = os.environ["PARTD_PATH"]
-    directory = os.path.join(directory, "data", project["id"])
-
-    # Create the data directory for the project if it doesn't exist.
-    if not os.path.exists(directory):
-        os.mkdir(directory)
-
-    # Init partd
-    p = partd.File(directory)
-
-    # Check if the asset is already stored and delete it if it is.
-    # (We're making the assumption that IDs supplied to us are unique).
-    if p.get(data["asset_id"]):
-        p.delete(data["asset_id"])
-
-    # Find the asset in Avalon
+    # Get the Id of the asset we just inserted into Avalon
     avalon_asset = avalon.find_one(
         {"name": lib.get_consistent_name(asset["name"]),
         "type": "asset"})
 
-    # Encode and store the data as a utf-8 bytes
-    value = bytes(str(avalon_asset["_id"]), "utf-8")
-    key_values = {data["asset_id"]: value}
-    p.append(key_values)
+    # Encode and store the Gazu Id and Avalon Id
+    lib.set_asset_data(project["id"], data["asset_id"], avalon_asset["_id"])
 
     avalon.uninstall()
 
-    print("Create Asset \"{0}\" in Project \"{1} ({2})\"".format(asset["name"], 
-        project["name"], project["code"]))
+    print("Create Asset \"{0}\" in Project \"{1}\"".format(asset["name"], 
+        project["name"]))
 
 
 def asset_update_callback(data):
@@ -118,6 +97,9 @@ def asset_update_callback(data):
         "type": "asset"}, avalon_asset)
 
     avalon.uninstall()
+
+    print("Updated Asset \"{0}\" in Project \"{1}\"".format(asset["name"], 
+        project["name"]))
 
 
 def project_new_callback(data):
@@ -196,7 +178,7 @@ def project_new_callback(data):
 
     avalon.uninstall()
 
-    print("Create Project: \"{0} ({1})\"".format(project["name"], project["name"]))
+    print("Created Project: \"{0}\"".format(project["name"]))
 
 
 def project_update_callback(data):
@@ -312,6 +294,9 @@ def shot_new_callback(data):
 
     # Encode and store the Gazu Id and Avalon Id
     lib.set_asset_data(project["id"], data["shot_id"], avalon_shot["_id"])
+
+    print("Created Shot \"{0}\" in Project \"{1}\"".format(shot["name"], 
+        project["name"]))
 
 
 
