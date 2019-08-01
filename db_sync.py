@@ -315,8 +315,6 @@ if __name__ == '__main__':
     gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
     print("Logged in..")
 
-    while True:
-        print("Syncing..")
-        main()
-        print("Sleeping for 30 seconds..")
-        time.sleep(30)
+
+    print("Syncing..")
+    main()
