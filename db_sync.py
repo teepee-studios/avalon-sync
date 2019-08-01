@@ -190,9 +190,9 @@ def main():
             
             avalon_project["name"] = project["name"]
             avalon_project["data"]["label"] = project["data"]["label"]
-            avalon_project["data"]["fps"] = project["data"]["fps"]
-            avalon_project["data"]["resolution_width"] = project["data"]["resolution_width"]
-            avalon_project["data"]["resolution_height"] = project["data"]["resolution_height"]
+            avalon_project["data"]["fps"] = int(project["data"]["fps"])
+            avalon_project["data"]["resolution_width"] = int(project["data"]["resolution_width"])
+            avalon_project["data"]["resolution_height"] = int(project["data"]["resolution_height"])
             avalon_project["config"]["tasks"] = tasks
 
             avalon.replace_one(
