@@ -104,11 +104,10 @@ def main():
                 if "visualParent" in asset:
                     data["data"]["visualParent"] = asset["visualParent"]
                 
-                if asset["data"] != None:
-                    if "tasks" in asset:
-                        data["data"]["tasks"] = []
-                        for task in asset["tasks"]:
-                            data["data"]["tasks"].append(lib.get_consistent_name(task["task_type_name"]))
+                if "tasks" in asset:
+                    data["data"]["tasks"] = []
+                    for task in asset["tasks"]:
+                        data["data"]["tasks"].append(lib.get_consistent_name(task["task_type_name"]))
 
                 entities[data["name"]] = data
 
