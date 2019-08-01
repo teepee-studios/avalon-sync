@@ -129,9 +129,9 @@ def main():
             "name": project_name,
             "data": {
                 "label": project["name"],
-                "fps": project["fps"],
-                "resolution_width": resolution_width,
-                "resolution_height": project["resolution"]
+                "fps": int(project["fps"]),
+                "resolution_width": int(resolution_width),
+                "resolution_height": int(project["resolution"])
             },
             "parent": None,
             "config": {
