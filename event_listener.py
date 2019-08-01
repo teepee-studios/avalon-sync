@@ -218,9 +218,9 @@ def project_update_callback(data):
     # Update the Avalon project with new data from Gazu
     avalon_project["name"] = project_name
     avalon_project["data"]["label"] = project["name"]
-    avalon_project["data"]["fps"] = project["fps"]
-    avalon_project["data"]["resolution_width"] = resolution_width
-    avalon_project["data"]["resolution_height"] = project["resolution"]
+    avalon_project["data"]["fps"] = int(project["fps"])
+    avalon_project["data"]["resolution_width"] = int(resolution_width)
+    avalon_project["data"]["resolution_height"] = int(project["resolution"])
     avalon_project["config"]["tasks"] = tasks
 
     avalon.replace_one(
