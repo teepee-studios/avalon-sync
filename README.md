@@ -65,7 +65,6 @@ to know about them currently:
 - People
 - Asset Type
 - Task Status
-- Task
 - Settings
 - Custom Actions
 
