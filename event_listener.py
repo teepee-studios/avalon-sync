@@ -9,6 +9,8 @@ import lib as lib
 os.environ["AVALON_PROJECT"] = "temp"
 os.environ["AVALON_ASSET"] = "bruce"
 os.environ["AVALON_SILO"] = "assets"
+os.environ["AVALON_TASK"] = "model"
+os.environ["AVALON_WORKDIR"] = "/avalon"
 
 def asset_create_callback(data):
     """
@@ -338,8 +340,10 @@ def shot_update_callback(data):
     if shot["data"] != None:
         if "frame_in" in shot["data"]:
             avalon_shot["data"]["edit_in"] = shot["data"]["frame_in"]
+            avalon_shot["data"]["startFrame"] = shot["data"]["frame_in"]
         if "frame_out" in shot["data"]:
-            avalon_shot["data"]["edit_out"] = shot["data"]["frame_out"] 
+            avalon_shot["data"]["edit_out"] = shot["data"]["frame_out"]
+            avalon_shot["data"]["endFrame"] = shot["data"]["frame_out"]
 
     avalon.replace_one(
         {"_id": avalon.ObjectId(shot_id),

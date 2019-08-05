@@ -92,8 +92,10 @@ def main():
                         if asset["data"] != None:
                             if "frame_in" in asset["data"]:
                                 data["data"]["edit_in"] = asset["data"]["frame_in"]
+                                data["data"]["startFrame"] = asset["data"]["frame_in"]
                             if "frame_out" in asset["data"]:
-                                data["data"]["edit_out"] = asset["data"]["frame_out"] 
+                                data["data"]["edit_out"] = asset["data"]["frame_out"]
+                                data["data"]["endFrame"] = asset["data"]["frame_out"]
                     elif asset["type"] == "Sequence":
                         data["data"]["group"] = asset["visualParent"]
                         data["data"]["visible"] = False
@@ -161,6 +163,8 @@ def main():
     os.environ["AVALON_PROJECT"] = "temp"
     os.environ["AVALON_ASSET"] = "bruce"
     os.environ["AVALON_SILO"] = "assets"
+    os.environ["AVALON_TASK"] = "model"
+    os.environ["AVALON_WORKDIR"] = "/avalon"
 
     existing_projects = {}
     existing_objects = {}
@@ -263,8 +267,10 @@ def main():
                     if asset["data"] != None:
                         if "edit_in" in asset["data"]:
                             avalon_asset["data"]["edit_in"] = asset["data"]["edit_in"]
+                            avalon_asset["data"]["startFrame"] = asset["data"]["startFrame"]
                         if "edit_out" in asset["data"]:
-                            avalon_asset["data"]["edit_out"] = asset["data"]["edit_out"] 
+                            avalon_asset["data"]["edit_out"] = asset["data"]["edit_out"]
+                            avalon_asset["data"]["endFrame"] = asset["data"]["endFrame"]  
                 
                 if "tasks" in asset["data"]:
                     avalon_asset["data"]["tasks"] = asset["data"]["tasks"]
