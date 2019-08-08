@@ -3,9 +3,31 @@ import sys
 import gazu
 import partd
 import pymongo
+import logging
 
 self = sys.modules[__name__]
 
+def init_logging(script_name):
+    base_directory = os.environ["DATA_PATH"]
+    logs_directory = os.path.join(base_directory, "logs")
+
+    # Create the logs directory for the project if it doesn't exist.
+    if not os.path.exists(logs_directory):
+        os.mkdir(logs_directory)
+
+    log_level = os.environ["LOG_LEVEL"].upper()
+    log_handler = logging.FileHandler("{0}/{1}.log".format(logs_directory, script_name))
+    
+    formatter = logging.Formatter('{asctime} - {levelname} - {message}', style="{")
+    log_handler.setFormatter(formatter)
+
+    logger = logging.getLogger("avalon_sync")
+    logger.setLevel(log_level)
+
+    logger.addHandler(log_handler)
+
+    return logger
+    
 def get_consistent_name(name):
     """Converts potentially inconsistent names."""
     return name.replace(" ", "_").lower()

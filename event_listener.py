@@ -1,6 +1,7 @@
 import os
 import gazu
 import partd
+import logging
 
 from avalon import io as avalon
 import lib as lib
@@ -59,7 +60,7 @@ def asset_create_callback(data):
 
     avalon.uninstall()
 
-    print("Create Asset \"{0}\" in Project \"{1}\"".format(asset["name"], 
+    logger.info("Create Asset \"{0}\" in Project \"{1}\"".format(asset["name"], 
         project["name"]))
 
 
@@ -99,7 +100,7 @@ def asset_update_callback(data):
 
     avalon.uninstall()
 
-    print("Updated Asset \"{0}\" in Project \"{1}\"".format(asset["name"], 
+    logger.info("Updated Asset \"{0}\" in Project \"{1}\"".format(asset["name"], 
         project["name"]))
 
 
@@ -179,7 +180,7 @@ def project_new_callback(data):
 
     avalon.uninstall()
 
-    print("Created Project: \"{0}\"".format(project["name"]))
+    logger.info("Created Project: \"{0}\"".format(project["name"]))
 
 
 def project_update_callback(data):
@@ -234,14 +235,14 @@ def project_update_callback(data):
 
     
     if os.environ["AVALON_PROJECT"] != avalon_project["name"]:
-        print("Updating project name from {0} to {1}".format(
+        logger.info("Updating project name from {0} to {1}".format(
             os.environ["AVALON_PROJECT"], avalon_project["name"]))
         lib.collection_rename(avalon_project["name"])
 
         lib.set_project_data(data["project_id"], avalon_project["_id"],
             avalon_project["name"])
 
-    print("Updating Project: \"{0} ({1})\"".format(
+    logger.info("Updating Project: \"{0} ({1})\"".format(
         avalon_project["data"]["label"], avalon_project["name"]))
 
 
@@ -296,7 +297,7 @@ def shot_new_callback(data):
     # Encode and store the Gazu Id and Avalon Id
     lib.set_asset_data(project["id"], data["shot_id"], avalon_shot["_id"])
 
-    print("Created Shot \"{0}\" in Project \"{1}\"".format(shot["name"], 
+    logger.info("Created Shot \"{0}\" in Project \"{1}\"".format(shot["name"], 
         project["name"]))
 
 
@@ -349,7 +350,7 @@ def shot_update_callback(data):
 
     avalon.uninstall()
 
-    print("Updated Shot \"{0}\" in Project \"{1}\"".format(avalon_shot["name"], 
+    logger.info("Updated Shot \"{0}\" in Project \"{1}\"".format(avalon_shot["name"], 
         project["name"]))
 
 
@@ -397,11 +398,12 @@ def task_new_callback(data):
 
     avalon.uninstall()
 
-    print("Added new \"{2}\" Task to \"{0}\" in Project \"{1}\""
+    logger.info("Added new \"{2}\" Task to \"{0}\" in Project \"{1}\""
         .format(avalon_entity["name"], project["name"], task_type["name"]))
 
 
-
+# Init Logging
+logger = lib.init_logging("event_listener")
 
 # Init Gazu
 gazu.client.set_host(os.environ["GAZU_URL"])
