@@ -323,8 +323,6 @@ def shot_update_callback(data):
 
     # Get Avalon Shot Id.
     shot_id = lib.get_asset_data(project["id"], data["shot_id"])
-    # Get shot Type
-    entity_type = gazu.entity.get_entity_type(shot["entity_type_id"])
 
     # Find the asset in Avalon
     avalon_shot = avalon.find_one(
