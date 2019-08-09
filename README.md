@@ -22,31 +22,30 @@ the newly added thing to Kitsu as not existing in Avalon.
 
 | Supported Actions | Event Listener | DB Syncer |
 | ------ | :------: | :------: |
-| Project New | X | X |
-| Project Update | X | X |
+| Project New | O | O |
+| Project Update | O | O |
 | Project Delete | - | - |
-| Asset New | X | X |
-| Asset Update | X | X |
+| Asset New | O | O |
+| Asset Update | O | O |
 | Asset Delete | - | - |
-| Shot New | X | X |
-| Shot Update | X | X |
+| Shot New | O | O |
+| Shot Update | O | O |
 | Shot Delete | - | - |
-| Sequence New | O | X |
-| Sequence Update | O | X |
+| Sequence New | X | O |
+| Sequence Update | X | O |
 | Sequence Delete | - | - |
-| Episode New | O | X |
-| Episode Update | O | X |
+| Episode New | X | O |
+| Episode Update | X | O |
 | Episode Delete | - | - |
-| Task New | X | X |
-| Task Update | O | X |
-| Task Delete | O | X |
-| Task Type New | O | X |
-| Task Type Update | O | X |
-| Task Type Delete | O | - |
+| Task New | O | O |
+| Task Update | X | O |
+| Task Delete | X | O |
+| Task Type New | X | O |
+| Task Type Update | X | O |
+| Task Type Delete | X | O |
 
-Cells with X are supported Action Types.  
-Cells with O are not needed or can't be handled by that script.
-Blank cells are Action Types that are not yet supported.  
+Cells with O are supported Action Types.  
+Cells with X are not needed or can't be handled by that script.  
 Cells with - are Action Types that will not be supported.  
 
 <details>
