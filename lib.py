@@ -36,7 +36,7 @@ def set_project_data(gazu_project_id, avalon_project_id, avalon_collection):
     # Lookup the Zou Id and Avalon Id key value pair of the asset
 
     # Init Logging
-    logger = lib.init_logging("db_sync")
+    logger = init_logging("db_sync")
 
     # Set the directory where partd stores it's data
     base_directory = os.environ["DATA_PATH"]
@@ -88,7 +88,7 @@ def set_asset_data(gazu_project_id, gazu_asset_id, avalon_asset_id):
     # Store Zou Id and Avalon Id key value pair of the asset
 
     # Init Logging
-    logger = lib.init_logging("db_sync")
+    logger = init_logging("db_sync")
             
     # Set the directory where partd stores it's data
     base_directory = os.environ["DATA_PATH"]
