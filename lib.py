@@ -35,9 +35,6 @@ def get_consistent_name(name):
 def set_project_data(gazu_project_id, avalon_project_id, avalon_collection):
     # Lookup the Zou Id and Avalon Id key value pair of the asset
 
-    # Init Logging
-    logger = init_logging("db_sync")
-
     # Set the directory where partd stores it's data
     base_directory = os.environ["DATA_PATH"]
     data_directory = os.path.join(base_directory, "data")
@@ -86,9 +83,6 @@ def get_project_data(project_id):
 
 def set_asset_data(gazu_project_id, gazu_asset_id, avalon_asset_id):
     # Store Zou Id and Avalon Id key value pair of the asset
-
-    # Init Logging
-    logger = init_logging("db_sync")
             
     # Set the directory where partd stores it's data
     base_directory = os.environ["DATA_PATH"]
