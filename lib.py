@@ -8,6 +8,7 @@ import logging
 self = sys.modules[__name__]
 
 def init_logging(script_name):
+    global logger
     base_directory = os.environ["DATA_PATH"]
     logs_directory = os.path.join(base_directory, "logs")
 
