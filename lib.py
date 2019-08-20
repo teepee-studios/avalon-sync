@@ -2,6 +2,7 @@ import os
 import sys
 import gazu
 import partd
+import shutil
 import pymongo
 import logging
 
@@ -18,12 +19,18 @@ def init_logging(script_name):
 
     log_level = os.environ["LOG_LEVEL"].upper()
     log_handler = logging.FileHandler("{0}/{1}.log".format(logs_directory, script_name))
+    if log_level == "DEBUG":
+        debug_log_handler = logging.StreamHandler()
+
     
     formatter = logging.Formatter('{asctime} - {levelname} - {message}', style="{")
     log_handler.setFormatter(formatter)
 
     logger = logging.getLogger("avalon_sync")
     logger.setLevel(log_level)
+
+    if log_level == "DEBUG":
+        logger.addHandler(debug_log_handler)
 
     logger.addHandler(log_handler)
 
@@ -140,3 +147,29 @@ def collection_rename(*args, **kwargs):
     self._database = self._mongo_client[database]
     self._database[os.environ["AVALON_PROJECT"]].rename(
         *args, **kwargs)
+
+def rename_filepath(old_name, new_name, project_name, directory="assets"):
+    # If file system path renaming is enabled, rename asset disk filepaths to match.
+    if(os.environ["FILESYS_RENAME"]):
+        if new_name != old_name:
+            avalon_projects = os.environ["AVALON_PROJECTS"]
+
+            old_folder_name = os.path.join(avalon_projects, project_name, 
+                directory, old_name)
+
+            new_folder_name = os.path.join(avalon_projects, 
+                project_name, directory, new_name)
+
+            if os.path.exists(old_folder_name):
+                if not os.path.exists(new_folder_name):
+                    logger.info("Asset name updated renaming {0} to {1}"
+                        .format(old_folder_name, new_folder_name))
+                    shutil.move(old_folder_name, new_folder_name)
+                else:
+                    logger.warning("Asset name updated trying to rename {0} to {1}, "
+                        "but new folder already exists. No action taken"
+                        .format(old_folder_name, new_folder_name)
+                    )
+            else:
+                logger.warning("Asset named updated, but {0} does not exist. No action taken"
+                        .format(old_folder_name))

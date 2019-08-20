@@ -72,8 +72,9 @@ def asset_update_callback(data):
     
     asset = gazu.asset.get_asset(data["asset_id"])
     project = gazu.project.get_project(asset["project_id"])
+    project_name = lib.get_consistent_name(project["name"])
 
-    os.environ["AVALON_PROJECT"] = lib.get_consistent_name(project["name"])
+    os.environ["AVALON_PROJECT"] = project_name
 
     avalon.uninstall()
     avalon.install()
@@ -88,6 +89,9 @@ def asset_update_callback(data):
         {"_id": avalon.ObjectId(asset_id),
         "type": "asset"})
 
+    # Set keep asset name for use in filesystem path renaming.
+    old_asset_name = lib.get_consistent_name(avalon_asset["name"])
+
     # Ensure asset["name"] consistency.
     asset_name = lib.get_consistent_name(asset["name"])
 
@@ -100,8 +104,16 @@ def asset_update_callback(data):
 
     avalon.uninstall()
 
-    logger.info("Updated Asset \"{0}\" in Project \"{1}\"".format(asset["name"], 
+    logger.info("Updated Asset \"{0}\" in Project \"{1}\"".format(old_asset_name, 
         project["name"]))
+
+    if asset_name != old_asset_name:
+        logger.info("Asset renamed from \"{0}\" to \"{1}\"".format(old_asset_name, 
+        asset_name))
+    
+    # If file system path renaming is enabled, rename asset disk filepaths to match.
+    if(os.environ["FILESYS_RENAME"]):
+        lib.rename_filepath(old_asset_name, asset_name, project_name, "assets")
 
 
 def project_new_callback(data):
@@ -310,6 +322,7 @@ def shot_update_callback(data):
     shot = gazu.shot.get_shot(data["shot_id"])
     project = gazu.project.get_project(shot["project_id"])
 
+    # Ensure name consistency.
     project_name = lib.get_consistent_name(project["name"])
     episode_name = lib.get_consistent_name(shot["episode_name"])
     sequence_name = lib.get_consistent_name(shot["sequence_name"])
@@ -317,7 +330,7 @@ def shot_update_callback(data):
     visualParent = [project_name, "{0}_{1}".format(episode_name, 
                 sequence_name)]
 
-    os.environ["AVALON_PROJECT"] = lib.get_consistent_name(project["name"])
+    os.environ["AVALON_PROJECT"] = project_name
 
     avalon.uninstall()
     avalon.install()
@@ -330,7 +343,11 @@ def shot_update_callback(data):
         {"_id": avalon.ObjectId(shot_id),
         "type": "asset"})
 
-    avalon_shot["name"] = "{0}_{1}_{2}".format(episode_name, sequence_name, shot_name)
+    # Set keep shot name for use in filesystem path renaming.
+    old_shot_name = lib.get_consistent_name(avalon_shot["name"])
+    new_shot_name = "{0}_{1}_{2}".format(episode_name, sequence_name, shot_name)
+
+    avalon_shot["name"] = new_shot_name
     avalon_shot["data"]["label"] = shot["name"]
     avalon_shot["data"]["group"] = "{0} {1}".format(shot["episode_name"].upper(), 
                 shot["sequence_name"].upper())
@@ -352,6 +369,14 @@ def shot_update_callback(data):
 
     logger.info("Updated Shot \"{0}\" in Project \"{1}\"".format(avalon_shot["name"], 
         project["name"]))
+
+    if shot_name != old_shot_name:
+        logger.info("Shot renamed from \"{0}\" to \"{1}\"".format(old_shot_name, 
+        new_shot_name))
+    
+    # If file system path renaming is enabled, rename asset disk filepaths to match.
+    if(os.environ["FILESYS_RENAME"]):
+        lib.rename_filepath(old_shot_name, new_shot_name, project_name, "shots")
 
 
 def task_new_callback(data):
