@@ -1,6 +1,7 @@
 import os
 import gazu
 import partd
+import shutil
 import logging
 
 from avalon import io as avalon
@@ -218,6 +219,7 @@ def project_update_callback(data):
 
     # Ensure project["name"] consistency.
     project_name = lib.get_consistent_name(project["name"])
+    old_project_name = lib.get_consistent_name(avalon_project["name"])
     
     # Projects may not have a resolution set
     if project["resolution"]:
@@ -246,16 +248,37 @@ def project_update_callback(data):
     avalon.uninstall()
 
     
-    if os.environ["AVALON_PROJECT"] != avalon_project["name"]:
+    if old_project_name != project_name:
         logger.info("Updating project name from {0} to {1}".format(
-            os.environ["AVALON_PROJECT"], avalon_project["name"]))
-        lib.collection_rename(avalon_project["name"])
+            old_project_name, project_name))
+        lib.collection_rename(project_name)
 
         lib.set_project_data(data["project_id"], avalon_project["_id"],
             avalon_project["name"])
 
+        if(os.environ["FILESYS_RENAME"]):
+            avalon_projects = os.environ["AVALON_PROJECTS"]
+
+            old_folder_name = os.path.join(avalon_projects, old_project_name)
+
+            new_folder_name = os.path.join(avalon_projects, project_name)
+
+            if os.path.exists(old_folder_name):
+                if not os.path.exists(new_folder_name):
+                    logger.info("Project name updated, renaming {0} to {1}"
+                        .format(old_folder_name, new_folder_name))
+                    shutil.move(old_folder_name, new_folder_name)
+                else:
+                    logger.warning("Project name updated, trying to rename {0} to {1}, "
+                        "but new folder already exists. No action taken"
+                        .format(old_folder_name, new_folder_name)
+                    )
+            else:
+                logger.warning("Project name updated, but {0} does not exist. No action taken"
+                        .format(old_folder_name))
+
     logger.info("Updating Project: \"{0} ({1})\"".format(
-        avalon_project["data"]["label"], avalon_project["name"]))
+        avalon_project["data"]["label"], project_name))
 
 
 def shot_new_callback(data):
