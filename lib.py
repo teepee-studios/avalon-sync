@@ -162,14 +162,14 @@ def rename_filepath(old_name, new_name, project_name, directory="assets"):
 
             if os.path.exists(old_folder_name):
                 if not os.path.exists(new_folder_name):
-                    logger.info("Asset name updated renaming {0} to {1}"
+                    logger.info("Name updated, renaming {0} to {1}"
                         .format(old_folder_name, new_folder_name))
                     shutil.move(old_folder_name, new_folder_name)
                 else:
-                    logger.warning("Asset name updated trying to rename {0} to {1}, "
+                    logger.warning("Name updated, trying to rename {0} to {1}, "
                         "but new folder already exists. No action taken"
                         .format(old_folder_name, new_folder_name)
                     )
             else:
-                logger.warning("Asset named updated, but {0} does not exist. No action taken"
+                logger.warning("Name updated, but {0} does not exist. No action taken"
                         .format(old_folder_name))
