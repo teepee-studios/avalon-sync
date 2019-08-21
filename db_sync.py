@@ -1,10 +1,9 @@
 import os
 import gazu
-import partd
-import logging
 
 from avalon import io as avalon
 import lib as lib
+
 
 def main():
     projects = {}
@@ -13,10 +12,10 @@ def main():
 
     logger.info("Get Project, Task, Asset and Shot Data...")
 
-
-    tasks = [{"name": lib.get_consistent_name(task["name"]), 
+    tasks = [{"name": lib.get_consistent_name(
+        task["name"]), 
         "label":task["name"]} for task in gazu.task.all_task_types()]
-    
+
     for project in gazu.project.all_projects():
         # Ensure project["name"] consistency.
         project_name = lib.get_consistent_name(project["name"])
@@ -67,7 +66,8 @@ def main():
         entities = {}
         for assets, silo in silos:
             for asset in assets:
-                entity_type = gazu.entity.get_entity_type(asset["entity_type_id"])
+                entity_type = gazu.entity.get_entity_type(
+                    asset["entity_type_id"])
 
                 data = {
                     "id": asset["id"],
@@ -81,23 +81,29 @@ def main():
                         "group": entity_type["name"],
                     }
                 }
-                
+
                 if silo == "assets":
                     data["data"]["group"] = entity_type["name"]
 
-                # If the silo is shots, group the shot under the proper sequence 
-                # and episode and hide sequences and episodes in the launcher.            
+                # If the silo is shots, group the shot under the proper
+                # sequence and episode and hide sequences and episodes in the
+                # launcher.
                 elif silo == "shots":
                     if asset["type"] == "Shot":
-                        data["data"]["group"] = asset["visualParent"].upper().replace("_", " ")
+                        data["data"]["group"] = asset["visualParent"].upper(
+                            ).replace("_", " ")
                         # Add frame data for shots.
-                        if asset["data"] != None:
+                        if asset["data"] is not None:
                             if "frame_in" in asset["data"]:
-                                data["data"]["edit_in"] = asset["data"]["frame_in"]
-                                data["data"]["startFrame"] = asset["data"]["frame_in"]
+                                data["data"]["edit_in"] = asset["data"][
+                                    "frame_in"]
+                                data["data"]["startFrame"] = asset["data"][
+                                    "frame_in"]
                             if "frame_out" in asset["data"]:
-                                data["data"]["edit_out"] = asset["data"]["frame_out"]
-                                data["data"]["endFrame"] = asset["data"]["frame_out"]
+                                data["data"]["edit_out"] = asset["data"][
+                                    "frame_out"]
+                                data["data"]["endFrame"] = asset["data"][
+                                    "frame_out"]
                     elif asset["type"] == "Sequence":
                         data["data"]["group"] = asset["visualParent"]
                         data["data"]["visible"] = False
@@ -111,7 +117,8 @@ def main():
                 if "tasks" in asset:
                     data["data"]["tasks"] = []
                     for task in asset["tasks"]:
-                        data["data"]["tasks"].append(lib.get_consistent_name(task["task_type_name"]))
+                        data["data"]["tasks"].append(lib.get_consistent_name(
+                            task["task_type_name"]))
 
                 entities[data["name"]] = data
 
@@ -168,7 +175,6 @@ def main():
     os.environ["AVALON_WORKDIR"] = "/avalon"
 
     existing_projects = {}
-    existing_objects = {}
 
     logger.info("Synchronising...")
     for name, project in projects.items():
@@ -183,36 +189,40 @@ def main():
             # Find the project in Avalon
             avalon_project = {}
             avalon_project = avalon.find_one(
-                {"_id": avalon.ObjectId(project_info["id"]), "type": "project"})
-            
+                {"_id": avalon.ObjectId(project_info["id"]), 
+                    "type": "project"})
+
             # Update the Avalon project with new data from Gazu
-            logger.info("Updating Project: {0} ({1})".format(project["data"]["label"], 
-                name))
+            logger.info("Updating Project: {0} ({1})".format(
+                project["data"]["label"], name))
             if not avalon_project:
                 logger.critical("Project missing from Avalon.")
-                logger.critical("Data directory and Avalon out of sync quitting...")
+                logger.critical("Data directory and Avalon out of sync "
+                                "quitting...")
                 quit()
-            
+
             avalon_project["name"] = project["name"]
             avalon_project["data"]["label"] = project["data"]["label"]
             avalon_project["data"]["fps"] = int(project["data"]["fps"])
-            avalon_project["data"]["resolution_width"] = int(project["data"]["resolution_width"])
-            avalon_project["data"]["resolution_height"] = int(project["data"]["resolution_height"])
+            avalon_project["data"]["resolution_width"] = int(
+                project["data"]["resolution_width"])
+            avalon_project["data"]["resolution_height"] = int(
+                project["data"]["resolution_height"])
             avalon_project["config"]["tasks"] = tasks
 
             avalon.replace_one(
                 {"_id": avalon.ObjectId(project_info["id"]),
-                "type": "project"}, avalon_project
+                    "type": "project"}, avalon_project
             )
             avalon.uninstall()
             if os.environ["AVALON_PROJECT"] != avalon_project["name"]:
-                logger.info("Updating project name from {0} to {1}".
-                format(os.environ["AVALON_PROJECT"], avalon_project["name"]))
+                logger.info("Updating project name from {0} to {1}".format(
+                    os.environ["AVALON_PROJECT"], avalon_project["name"]))
 
                 lib.collection_rename(avalon_project["name"])
 
-                lib.set_project_data(project["id"], project_info["id"],
-                    avalon_project["name"])
+                lib.set_project_data(
+                    project["id"], project_info["id"], avalon_project["name"])
 
         else:
             logger.info("Installing project: {0}".format(project["name"]))
@@ -222,31 +232,33 @@ def main():
 
             # Remove Gazu ID from project so it doesn't go into the Avalon DB
             project_id = project.pop("id")
-            
+
             # Inset project into Avalon DB
             avalon.insert_one(project)
 
-            # Put Gazu ID back into the project so we can use it later for assets
+            # Put Gazu ID back into the project so we can use it later for 
+            # assets
             project.update(id=project_id)
-            
+
             # Find the new project in Avalon
             avalon_project = avalon.find_one(
                 {"name": lib.get_consistent_name(project["name"]),
-                "type": "project"})
+                    "type": "project"})
 
-            # Store a key of Gazu project ID and a list of the Avalon project ID 
-            # and project code (mongodb collection) as a value.
-            lib.set_project_data(project_id, avalon_project["_id"], project["name"])
-            
+            # Store a key of Gazu project ID and a list of the Avalon
+            # project ID and project code (mongodb collection) as a value.
+            lib.set_project_data(
+                project_id, avalon_project["_id"], project["name"])
+
     for project["id"], assets in objects.items():
         project_info = lib.get_project_data(project["id"])
         os.environ["AVALON_PROJECT"] = project_info["collection"]
         avalon.uninstall()
         avalon.install()
-        
+
         for asset_name, asset in assets.items():
             asset_id = lib.get_asset_data(project["id"], asset["id"])
-            
+
             if asset_id:
                 # Update Assets in Avalon with new data from Gazu
 
@@ -254,27 +266,33 @@ def main():
                 avalon_asset = {}
                 avalon_asset = avalon.find_one(
                     {"_id": avalon.ObjectId(asset_id), "type": "asset"})
-                
-                logger.info("Updating Asset: {0} ({1})".
-                    format(avalon_asset["data"]["label"], avalon_asset["name"]))
+
+                logger.info("Updating Asset: {0} ({1})".format(
+                    avalon_asset["data"]["label"], avalon_asset["name"]))
 
                 if avalon_asset["name"] != asset["name"]:
-                    logger.info("Updating asset name from {0} to {1}".
-                        format(avalon_asset["name"], asset["name"]))
-                
+                    logger.info("Updating asset name from {0} to {1}".format(
+                        avalon_asset["name"], asset["name"]))
+
                 avalon_asset["name"] = asset["name"]
                 avalon_asset["data"]["label"] = asset["data"]["label"]
                 avalon_asset["data"]["group"] = asset["data"]["group"]
 
-                if avalon_asset["silo"] == "shots" and asset["asset_type"] == "Shot":
-                    if asset["data"] != None:
+                if avalon_asset["silo"] == "shots" and asset[
+                        "asset_type"] == "Shot":
+
+                    if asset["data"] is not None:
                         if "edit_in" in asset["data"]:
-                            avalon_asset["data"]["edit_in"] = asset["data"]["edit_in"]
-                            avalon_asset["data"]["startFrame"] = asset["data"]["startFrame"]
+                            avalon_asset["data"]["edit_in"] = asset["data"][
+                                "edit_in"]
+                            avalon_asset["data"]["startFrame"] = asset["data"][
+                                "startFrame"]
                         if "edit_out" in asset["data"]:
-                            avalon_asset["data"]["edit_out"] = asset["data"]["edit_out"]
-                            avalon_asset["data"]["endFrame"] = asset["data"]["endFrame"]  
-                
+                            avalon_asset["data"]["edit_out"] = asset["data"][
+                                "edit_out"]
+                            avalon_asset["data"]["endFrame"] = asset["data"][
+                                "endFrame"]  
+
                 if "tasks" in asset["data"]:
                     avalon_asset["data"]["tasks"] = asset["data"]["tasks"]
 
@@ -284,14 +302,16 @@ def main():
             else:
                 # Insert new Assets into Avalon
                 asset["parent"] = avalon.locate([asset["parent"]])
-                
+
                 if "visualParent" in asset["data"]:
-                    visual_parent = lib.get_consistent_name(asset["data"]["visualParent"])
-                    asset_data = avalon.find_one({"type": "asset", "name": visual_parent})
+                    visual_parent = lib.get_consistent_name(asset["data"][
+                        "visualParent"])
+                    asset_data = avalon.find_one(
+                        {"type": "asset", "name": visual_parent})
                     asset["data"]["visualParent"] = asset_data["_id"]
 
-                logger.info("Installing asset: \"{0} / {1}\"".
-                    format(project["id"], asset_name))
+                logger.info("Installing asset: \"{0} / {1}\"".format(
+                    project["id"], asset_name))
 
                 # Remove Gazu ID and asset_type from asset so it doesn't go 
                 # into the Avalon DB.
@@ -301,20 +321,18 @@ def main():
 
                 # Inset asset into Avalon DB
                 avalon.insert_one(asset)
-                
+
                 # Get the Id of the asset we just inserted into Avalon
                 avalon_asset = avalon.find_one(
                     {"name": lib.get_consistent_name(asset["name"]),
-                    "type": "asset"})
+                        "type": "asset"})
 
                 # Encode and store the Gazu Id and Avalon Id
-                lib.set_asset_data(project["id"], asset_gazu_id, avalon_asset["_id"])
+                lib.set_asset_data(
+                    project["id"], asset_gazu_id, avalon_asset["_id"])
 
     logger.info("Success")
 
-
-
-import time
 
 logger = lib.init_logging("db_sync")
 
@@ -326,4 +344,3 @@ logger.info("Logged in...")
 
 logger.info("Syncing...")
 main()
-
