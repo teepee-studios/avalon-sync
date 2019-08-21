@@ -15,8 +15,8 @@ os.environ["AVALON_WORKDIR"] = "/avalon"
 
 def asset_create_callback(data):
     """
-    On receiving a asset:create event, insert the asset into the 
-    Avalon mongodb and store Zou Id and Avalon Id key value pair 
+    On receiving a asset:create event, insert the asset into the
+    Avalon mongodb and store Zou Id and Avalon Id key value pair
     for using in asset update events.
     """
 
@@ -111,7 +111,7 @@ def asset_update_callback(data):
         logger.info("Asset renamed from \"{0}\" to \"{1}\"".format(
             old_asset_name, asset_name))
 
-    # If file system path renaming is enabled, rename asset disk 
+    # If file system path renaming is enabled, rename asset disk
     # filepaths to match.
     if(os.environ["FILESYS_RENAME"]):
         lib.rename_filepath(old_asset_name, asset_name, project_name, "assets")
@@ -119,20 +119,20 @@ def asset_update_callback(data):
 
 def project_new_callback(data):
     """
-    On receiving a project:new event, insert the project into the 
-    Avalon mongodb and store Zou id and Avalon id key value pair for 
+    On receiving a project:new event, insert the project into the
+    Avalon mongodb and store Zou id and Avalon id key value pair for
     using in asset update events.
     """
 
     # Log in to API
     gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
     gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
-    
+
     project = gazu.project.get_project(data["project_id"])
 
     # Ensure project["name"] consistency.
     project_name = lib.get_consistent_name(project["name"])
-    
+
     os.environ["AVALON_PROJECT"] = project_name
 
     avalon.uninstall()
@@ -146,8 +146,8 @@ def project_new_callback(data):
         project["resolution"] = None
     # Get tasks from Gazu API
     tasks = [
-        {"name": lib.get_consistent_name(task["name"]), 
-            "label":task["name"]} 
+        {"name": lib.get_consistent_name(task["name"]),
+            "label":task["name"]}
         for task in gazu.task.all_task_types()]
 
     project_data = {
@@ -232,8 +232,8 @@ def project_update_callback(data):
 
     # Get latest Tasks from Gazu
     tasks = [
-        {"name": lib.get_consistent_name(task["name"]), 
-            "label":task["name"]} 
+        {"name": lib.get_consistent_name(task["name"]),
+            "label":task["name"]}
         for task in gazu.task.all_task_types()]
 
     # Update the Avalon project with new data from Gazu
@@ -291,15 +291,15 @@ def project_update_callback(data):
 
 def shot_new_callback(data):
     """
-    On receiving a shot:new event, insert the shot into the 
-    Avalon mongodb and store Zou Id and Avalon Id key value pair 
+    On receiving a shot:new event, insert the shot into the
+    Avalon mongodb and store Zou Id and Avalon Id key value pair
     for using in asset update events.
     """
 
     # Log in to API
     gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
     gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
-    
+
     shot = gazu.shot.get_shot(data["shot_id"])
     project = gazu.project.get_project(shot["project_id"])
 
@@ -324,7 +324,7 @@ def shot_new_callback(data):
         "data": {
             "label": shot["name"],
             "group": "{0} {1}".format(
-                shot["episode_name"].upper(), 
+                shot["episode_name"].upper(),
                 shot["sequence_name"].upper()),
             "visualParent": avalon.locate(visualParent)
         }
@@ -407,7 +407,7 @@ def shot_update_callback(data):
         logger.info("Shot renamed from \"{0}\" to \"{1}\"".format(
             old_shot_name, new_shot_name))
 
-    # If file system path renaming is enabled, rename asset disk 
+    # If file system path renaming is enabled, rename asset disk
     # filepaths to match.
     if(os.environ["FILESYS_RENAME"]):
         lib.rename_filepath(
@@ -416,14 +416,14 @@ def shot_update_callback(data):
 
 def task_new_callback(data):
     """
-    On receiving a task:new event, add a task to an asset in the 
+    On receiving a task:new event, add a task to an asset in the
     Avalon mongodb.
     """
 
     # Log in to API
     gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
     gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
-    
+
     task = gazu.task.get_task(data["task_id"])
     entity = task["entity"]
     project = task["project"]

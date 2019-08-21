@@ -13,7 +13,7 @@ def main():
     logger.info("Get Project, Task, Asset and Shot Data...")
 
     tasks = [{"name": lib.get_consistent_name(
-        task["name"]), 
+        task["name"]),
         "label":task["name"]} for task in gazu.task.all_task_types()]
 
     for project in gazu.project.all_projects():
@@ -113,7 +113,7 @@ def main():
 
                 if "visualParent" in asset:
                     data["data"]["visualParent"] = asset["visualParent"]
-                
+
                 if "tasks" in asset:
                     data["data"]["tasks"] = []
                     for task in asset["tasks"]:
@@ -123,7 +123,7 @@ def main():
                 entities[data["name"]] = data
 
                 objects_count += 1
-        
+
         objects[project["id"]] = entities
 
         # Newly created projects don't have a resolution set
@@ -189,7 +189,7 @@ def main():
             # Find the project in Avalon
             avalon_project = {}
             avalon_project = avalon.find_one(
-                {"_id": avalon.ObjectId(project_info["id"]), 
+                {"_id": avalon.ObjectId(project_info["id"]),
                     "type": "project"})
 
             # Update the Avalon project with new data from Gazu
@@ -236,7 +236,7 @@ def main():
             # Inset project into Avalon DB
             avalon.insert_one(project)
 
-            # Put Gazu ID back into the project so we can use it later for 
+            # Put Gazu ID back into the project so we can use it later for
             # assets
             project.update(id=project_id)
 
@@ -291,7 +291,7 @@ def main():
                             avalon_asset["data"]["edit_out"] = asset["data"][
                                 "edit_out"]
                             avalon_asset["data"]["endFrame"] = asset["data"][
-                                "endFrame"]  
+                                "endFrame"]
 
                 if "tasks" in asset["data"]:
                     avalon_asset["data"]["tasks"] = asset["data"]["tasks"]
@@ -313,7 +313,7 @@ def main():
                 logger.info("Installing asset: \"{0} / {1}\"".format(
                     project["id"], asset_name))
 
-                # Remove Gazu ID and asset_type from asset so it doesn't go 
+                # Remove Gazu ID and asset_type from asset so it doesn't go
                 # into the Avalon DB.
                 asset_gazu_id = asset.pop("id")
                 if "asset_type" in asset:
