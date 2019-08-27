@@ -303,32 +303,57 @@ def shot_new_callback(data):
     shot = gazu.shot.get_shot(data["shot_id"])
     project = gazu.project.get_project(shot["project_id"])
 
-    project_name = lib.get_consistent_name(project["name"])
-    episode_name = lib.get_consistent_name(shot["episode_name"])
-    sequence_name = lib.get_consistent_name(shot["sequence_name"])
-    shot_name = lib.get_consistent_name(shot["name"])
-    visualParent = [project_name, "{0}_{1}".format(
-        episode_name, sequence_name)]
+    if project["production_type"] == "tvshow":
+        project_name = lib.get_consistent_name(project["name"])
+        episode_name = lib.get_consistent_name(shot["episode_name"])
+        sequence_name = lib.get_consistent_name(shot["sequence_name"])
+        shot_name = lib.get_consistent_name(shot["name"])
+        visualParent = [project_name, "{0}_{1}".format(
+            episode_name, sequence_name)]
 
-    os.environ["AVALON_PROJECT"] = project_name
+        os.environ["AVALON_PROJECT"] = project_name
 
-    avalon.uninstall()
-    avalon.install()
+        avalon.uninstall()
+        avalon.install()
 
-    shot_data = {
-        "schema": "avalon-core:asset-2.0",
-        "name": "{0}_{1}_{2}".format(episode_name, sequence_name, shot_name),
-        "silo": "shots",
-        "type": "asset",
-        "parent": avalon.locate([project_name]),
-        "data": {
-            "label": shot["name"],
-            "group": "{0} {1}".format(
-                shot["episode_name"].upper(),
-                shot["sequence_name"].upper()),
-            "visualParent": avalon.locate(visualParent)
+        shot_data = {
+            "schema": "avalon-core:asset-2.0",
+            "name": "{0}_{1}_{2}".format(episode_name, sequence_name, shot_name),
+            "silo": "shots",
+            "type": "asset",
+            "parent": avalon.locate([project_name]),
+            "data": {
+                "label": shot["name"],
+                "group": "{0} {1}".format(
+                    shot["episode_name"].upper(),
+                    shot["sequence_name"].upper()),
+                "visualParent": avalon.locate(visualParent)
+            }
         }
-    }
+    else:
+        project_name = lib.get_consistent_name(project["name"])
+        sequence_name = lib.get_consistent_name(shot["sequence_name"])
+        shot_name = lib.get_consistent_name(shot["name"])
+        visualParent = [project_name, "{0}".format(
+            sequence_name)]
+
+        os.environ["AVALON_PROJECT"] = project_name
+
+        avalon.uninstall()
+        avalon.install()
+
+        shot_data = {
+            "schema": "avalon-core:asset-2.0",
+            "name": "{0}_{1}".format(sequence_name, shot_name),
+            "silo": "shots",
+            "type": "asset",
+            "parent": avalon.locate([project_name]),
+            "data": {
+                "label": shot["name"],
+                "group": "{0}".format(shot["sequence_name"].upper()),
+                "visualParent": avalon.locate(visualParent)
+            }
+        }
 
     # Inset shot into Avalon DB
     avalon.insert_one(shot_data)
@@ -353,38 +378,67 @@ def shot_update_callback(data):
 
     shot = gazu.shot.get_shot(data["shot_id"])
     project = gazu.project.get_project(shot["project_id"])
+    if project["production_type"] == "tvshow":
+        # Ensure name consistency.
+        project_name = lib.get_consistent_name(project["name"])
+        episode_name = lib.get_consistent_name(shot["episode_name"])
+        sequence_name = lib.get_consistent_name(shot["sequence_name"])
+        shot_name = lib.get_consistent_name(shot["name"])
+        visualParent = [project_name, "{0}_{1}".format(
+            episode_name, sequence_name)]
 
-    # Ensure name consistency.
-    project_name = lib.get_consistent_name(project["name"])
-    episode_name = lib.get_consistent_name(shot["episode_name"])
-    sequence_name = lib.get_consistent_name(shot["sequence_name"])
-    shot_name = lib.get_consistent_name(shot["name"])
-    visualParent = [project_name, "{0}_{1}".format(
-        episode_name, sequence_name)]
+        os.environ["AVALON_PROJECT"] = project_name
 
-    os.environ["AVALON_PROJECT"] = project_name
+        avalon.uninstall()
+        avalon.install()
 
-    avalon.uninstall()
-    avalon.install()
+        # Get Avalon Shot Id.
+        shot_id = lib.get_asset_data(project["id"], data["shot_id"])
 
-    # Get Avalon Shot Id.
-    shot_id = lib.get_asset_data(project["id"], data["shot_id"])
+        # Find the asset in Avalon
+        avalon_shot = avalon.find_one(
+            {"_id": avalon.ObjectId(shot_id),
+                "type": "asset"})
 
-    # Find the asset in Avalon
-    avalon_shot = avalon.find_one(
-        {"_id": avalon.ObjectId(shot_id),
-            "type": "asset"})
+        # Set keep shot name for use in filesystem path renaming.
+        old_shot_name = lib.get_consistent_name(avalon_shot["name"])
+        new_shot_name = "{0}_{1}_{2}".format(
+            episode_name, sequence_name, shot_name)
 
-    # Set keep shot name for use in filesystem path renaming.
-    old_shot_name = lib.get_consistent_name(avalon_shot["name"])
-    new_shot_name = "{0}_{1}_{2}".format(
-        episode_name, sequence_name, shot_name)
+        avalon_shot["name"] = new_shot_name
+        avalon_shot["data"]["label"] = shot["name"]
+        avalon_shot["data"]["group"] = "{0} {1}".format(
+            shot["episode_name"].upper(), shot["sequence_name"].upper())
+        avalon_shot["data"]["visualParent"] = avalon.locate(visualParent)
 
-    avalon_shot["name"] = new_shot_name
-    avalon_shot["data"]["label"] = shot["name"]
-    avalon_shot["data"]["group"] = "{0} {1}".format(
-        shot["episode_name"].upper(), shot["sequence_name"].upper())
-    avalon_shot["data"]["visualParent"] = avalon.locate(visualParent)
+    else:
+        # Ensure name consistency.
+        project_name = lib.get_consistent_name(project["name"])
+        sequence_name = lib.get_consistent_name(shot["sequence_name"])
+        shot_name = lib.get_consistent_name(shot["name"])
+        visualParent = [project_name, "{0}".format(sequence_name)]
+
+        os.environ["AVALON_PROJECT"] = project_name
+
+        avalon.uninstall()
+        avalon.install()
+
+        # Get Avalon Shot Id.
+        shot_id = lib.get_asset_data(project["id"], data["shot_id"])
+
+        # Find the asset in Avalon
+        avalon_shot = avalon.find_one(
+            {"_id": avalon.ObjectId(shot_id),
+                "type": "asset"})
+
+        # Set keep shot name for use in filesystem path renaming.
+        old_shot_name = lib.get_consistent_name(avalon_shot["name"])
+        new_shot_name = "{0}_{1}".format(sequence_name, shot_name)
+
+        avalon_shot["name"] = new_shot_name
+        avalon_shot["data"]["label"] = shot["name"]
+        avalon_shot["data"]["group"] = "{0}".format(shot["sequence_name"].upper())
+        avalon_shot["data"]["visualParent"] = avalon.locate(visualParent)
 
     if shot["data"] is not None:
         if "frame_in" in shot["data"]:
@@ -475,8 +529,7 @@ gazu.events.add_listener(event_client, "asset:update", asset_update_callback)
 
 # Project Event Types
 gazu.events.add_listener(event_client, "project:new", project_new_callback)
-gazu.events.add_listener(
-    event_client, "project:update", project_update_callback)
+gazu.events.add_listener(event_client, "project:update", project_update_callback)
 
 # Shot Event Types
 gazu.events.add_listener(event_client, "shot:new", shot_new_callback)
