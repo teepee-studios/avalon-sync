@@ -12,9 +12,10 @@ def main():
 
     logger.info("Get Project, Task, Asset and Shot Data...")
 
-    tasks = [{"name": lib.get_consistent_name(
-        task["name"]),
-        "label":task["name"]} for task in gazu.task.all_task_types()]
+    tasks = [
+        {"name": lib.get_consistent_name(task["name"]),
+            "label":task["name"]} for task in gazu.task.all_task_types()
+        ]
 
     for project in gazu.project.all_projects():
         # Ensure project["name"] consistency.
@@ -33,25 +34,42 @@ def main():
         episodes = []
         sequences = []
         shots = []
-        for episode in (gazu.shot.all_episodes_for_project(project) or []):
-            episode["code"] = lib.get_consistent_name(episode["name"])
-            # Faking a parent for better hierarchy structure, until folders are
-            # supported in Kitsu.
-            episode["parents"] = ["episodes"]
-            episodes.append(episode)
-            for sequence in gazu.shot.all_sequences_for_episode(episode):
+        if project["production_type"] == "tvshow":
+            for episode in (gazu.shot.all_episodes_for_project(project) or []):
+                episode["code"] = lib.get_consistent_name(episode["name"])
+
+                # Faking a parent for better hierarchy structure, until
+                # folders are supported in Kitsu.
+                episode["parents"] = ["episodes"]
+                episodes.append(episode)
+                for sequence in gazu.shot.all_sequences_for_episode(episode):
+                    sequence["code"] = lib.get_consistent_name(sequence["name"])
+                    sequence["label"] = sequence["name"]
+                    sequence["name"] = "{0}_{1}".format(
+                        episode["code"], sequence["code"]
+                    )
+                    sequence["visualParent"] = episode["name"]
+                    sequences.append(sequence)
+                    for shot in gazu.shot.all_shots_for_sequence(sequence):
+                        shot["code"] = lib.get_consistent_name(shot["name"])
+                        shot["label"] = shot["name"]
+                        shot["name"] = "{0}_{1}_{2}".format(
+                            episode["code"], sequence["code"], shot["code"]
+                        )
+                        shot["visualParent"] = sequence["name"]
+                        shot["tasks"] = gazu.task.all_tasks_for_shot(shot)
+                        shots.append(shot)
+        else:
+            for sequence in gazu.shot.all_sequences_for_project(project):
                 sequence["code"] = lib.get_consistent_name(sequence["name"])
                 sequence["label"] = sequence["name"]
-                sequence["name"] = "{0}_{1}".format(
-                    episode["code"], sequence["code"]
-                )
-                sequence["visualParent"] = episode["name"]
+                sequence["name"] = "{0}".format(sequence["code"])
                 sequences.append(sequence)
                 for shot in gazu.shot.all_shots_for_sequence(sequence):
                     shot["code"] = lib.get_consistent_name(shot["name"])
                     shot["label"] = shot["name"]
-                    shot["name"] = "{0}_{1}_{2}".format(
-                        episode["code"], sequence["code"], shot["code"]
+                    shot["name"] = "{0}_{1}".format(
+                        sequence["code"], shot["code"]
                     )
                     shot["visualParent"] = sequence["name"]
                     shot["tasks"] = gazu.task.all_tasks_for_shot(shot)
@@ -95,17 +113,14 @@ def main():
                         # Add frame data for shots.
                         if asset["data"] is not None:
                             if "frame_in" in asset["data"]:
-                                data["data"]["edit_in"] = asset["data"][
-                                    "frame_in"]
-                                data["data"]["startFrame"] = asset["data"][
-                                    "frame_in"]
+                                data["data"]["edit_in"] = asset["data"]["frame_in"]
+                                data["data"]["startFrame"] = asset["data"]["frame_in"]
                             if "frame_out" in asset["data"]:
-                                data["data"]["edit_out"] = asset["data"][
-                                    "frame_out"]
-                                data["data"]["endFrame"] = asset["data"][
-                                    "frame_out"]
+                                data["data"]["edit_out"] = asset["data"]["frame_out"]
+                                data["data"]["endFrame"] = asset["data"]["frame_out"]
                     elif asset["type"] == "Sequence":
-                        data["data"]["group"] = asset["visualParent"]
+                        if "visualParent" in asset:
+                            data["data"]["group"] = asset["visualParent"]
                         data["data"]["visible"] = False
                     elif asset["type"] == "Episode":
                         data["data"]["visible"] = False
@@ -237,7 +252,7 @@ def main():
             avalon.insert_one(project)
 
             # Put Gazu ID back into the project so we can use it later for
-            # assets
+            # assets.
             project.update(id=project_id)
 
             # Find the new project in Avalon
@@ -278,20 +293,16 @@ def main():
                 avalon_asset["data"]["label"] = asset["data"]["label"]
                 avalon_asset["data"]["group"] = asset["data"]["group"]
 
-                if avalon_asset["silo"] == "shots" and asset[
-                        "asset_type"] == "Shot":
+                if avalon_asset["silo"] == "shots" and asset["asset_type"] == "Shot":
 
                     if asset["data"] is not None:
                         if "edit_in" in asset["data"]:
-                            avalon_asset["data"]["edit_in"] = asset["data"][
-                                "edit_in"]
+                            avalon_asset["data"]["edit_in"] = asset["data"]["edit_in"]
                             avalon_asset["data"]["startFrame"] = asset["data"][
                                 "startFrame"]
                         if "edit_out" in asset["data"]:
-                            avalon_asset["data"]["edit_out"] = asset["data"][
-                                "edit_out"]
-                            avalon_asset["data"]["endFrame"] = asset["data"][
-                                "endFrame"]
+                            avalon_asset["data"]["edit_out"] = asset["data"]["edit_out"]
+                            avalon_asset["data"]["endFrame"] = asset["data"]["endFrame"]
 
                 if "tasks" in asset["data"]:
                     avalon_asset["data"]["tasks"] = asset["data"]["tasks"]
@@ -304,8 +315,8 @@ def main():
                 asset["parent"] = avalon.locate([asset["parent"]])
 
                 if "visualParent" in asset["data"]:
-                    visual_parent = lib.get_consistent_name(asset["data"][
-                        "visualParent"])
+                    visual_parent = lib.get_consistent_name(
+                        asset["data"]["visualParent"])
                     asset_data = avalon.find_one(
                         {"type": "asset", "name": visual_parent})
                     asset["data"]["visualParent"] = asset_data["_id"]
@@ -324,8 +335,7 @@ def main():
 
                 # Get the Id of the asset we just inserted into Avalon
                 avalon_asset = avalon.find_one(
-                    {"name": lib.get_consistent_name(asset["name"]),
-                        "type": "asset"})
+                    {"name": lib.get_consistent_name(asset["name"]), "type": "asset"})
 
                 # Encode and store the Gazu Id and Avalon Id
                 lib.set_asset_data(
