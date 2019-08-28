@@ -462,7 +462,7 @@ def shot_update_callback(data):
     logger.info("Updated Shot \"{0}\" in Project \"{1}\"".format(
         avalon_shot["name"], project["name"]))
 
-    if shot_name != old_shot_name:
+    if new_shot_name != old_shot_name:
         logger.info("Shot renamed from \"{0}\" to \"{1}\"".format(
             old_shot_name, new_shot_name))
 
