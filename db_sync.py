@@ -118,6 +118,9 @@ def main():
                             if "frame_out" in asset["data"]:
                                 data["data"]["edit_out"] = asset["data"]["frame_out"]
                                 data["data"]["endFrame"] = asset["data"]["frame_out"]
+                            if "fps" in asset["data"]:
+                                if asset["data"]["fps"] != "":
+                                    data["data"]["fps"] = int(asset["data"]["fps"])
                     elif asset["type"] == "Sequence":
                         if "visualParent" in asset:
                             data["data"]["group"] = asset["visualParent"]
@@ -303,6 +306,12 @@ def main():
                         if "edit_out" in asset["data"]:
                             avalon_asset["data"]["edit_out"] = asset["data"]["edit_out"]
                             avalon_asset["data"]["endFrame"] = asset["data"]["endFrame"]
+                        if "fps" in asset["data"]:
+                            if asset["data"]["fps"] != "":
+                                avalon_asset["data"]["fps"] = int(asset["data"]["fps"])
+                        if "fps" in avalon_asset["data"] and "fps" not in asset["data"]:
+                            print("\n\ndel fps\n\n")
+                            del avalon_asset["data"]["fps"]
 
                 if "tasks" in asset["data"]:
                     avalon_asset["data"]["tasks"] = asset["data"]["tasks"]

@@ -447,6 +447,11 @@ def shot_update_callback(data):
         if "frame_out" in shot["data"]:
             avalon_shot["data"]["edit_out"] = shot["data"]["frame_out"]
             avalon_shot["data"]["endFrame"] = shot["data"]["frame_out"]
+        if "fps" in shot["data"]:
+            if shot["data"]["fps"] != "":
+                avalon_shot["data"]["fps"] = int(shot["data"]["fps"])
+        if "fps" in avalon_shot["data"] and shot["data"]["fps"] == "":
+            del avalon_shot["data"]["fps"]
 
     avalon.replace_one(
         {"_id": avalon.ObjectId(shot_id),
