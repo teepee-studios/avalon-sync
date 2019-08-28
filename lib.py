@@ -180,9 +180,9 @@ def rename_filepath(old_name, new_name, project_name, directory="assets"):
                     logger.warning(
                         "Name updated, trying to rename {0} to "
                         "{1}, but new folder already exists. No action "
-                        "taken".format(old_folder_name, new_folder_name)
+                        "taken.".format(old_folder_name, new_folder_name)
                     )
             else:
                 logger.warning(
-                    "Name updated, but {0} does not exist. No action taken"
+                    "Name updated, but {0} does not exist. No action taken."
                     .format(old_folder_name))
