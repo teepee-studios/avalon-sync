@@ -259,6 +259,8 @@ def project_update_callback(data):
         lib.set_project_data(
             data["project_id"], avalon_project["_id"], avalon_project["name"])
 
+        # If file system path renaming is enabled, rename project disk
+        # filepaths to match.
         if(os.environ["FILESYS_RENAME"]):
             avalon_projects = os.environ["AVALON_PROJECTS"]
 
@@ -268,21 +270,19 @@ def project_update_callback(data):
 
             if os.path.exists(old_folder_name):
                 if not os.path.exists(new_folder_name):
-                    logger.info("Project name updated, "
-                                "renaming {0} to {1}".format(
-                                    old_folder_name, new_folder_name))
+                    logger.info("Project name updated, renaming {0} to {1}"
+                                .format(old_folder_name, new_folder_name))
                     shutil.move(old_folder_name, new_folder_name)
                 else:
                     logger.warning(
-                        "Project name updated, trying to "
-                        "rename {0} to {1}, but new folder "
-                        "already exists. No action taken"
+                        "Project name updated, trying to rename {0} to {1}, but new "
+                        "folder already exists. No action taken."
                         .format(old_folder_name, new_folder_name)
                     )
             else:
                 logger.warning(
                     "Project name updated, but {0} does not exist. No "
-                    "action taken"
+                    "action taken."
                     .format(old_folder_name))
 
     logger.info("Updating Project: \"{0} ({1})\"".format(
@@ -466,7 +466,7 @@ def shot_update_callback(data):
         logger.info("Shot renamed from \"{0}\" to \"{1}\"".format(
             old_shot_name, new_shot_name))
 
-    # If file system path renaming is enabled, rename asset disk
+    # If file system path renaming is enabled, rename shot disk
     # filepaths to match.
     if(os.environ["FILESYS_RENAME"]):
         lib.rename_filepath(
