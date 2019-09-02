@@ -1,5 +1,6 @@
 import os
 import gazu
+import shutil
 
 from avalon import io as avalon
 import lib as lib
@@ -210,6 +211,10 @@ def main():
                 {"_id": avalon.ObjectId(project_info["id"]),
                     "type": "project"})
 
+            # Set old and new project names
+            project_name = lib.get_consistent_name(project["name"])
+            old_project_name = lib.get_consistent_name(avalon_project["name"])
+
             # Update the Avalon project with new data from Gazu
             logger.info("Updating Project: {0} ({1})".format(
                 project["data"]["label"], name))
@@ -219,7 +224,7 @@ def main():
                                 "quitting...")
                 quit()
 
-            avalon_project["name"] = project["name"]
+            avalon_project["name"] = project_name
             avalon_project["data"]["label"] = project["data"]["label"]
             avalon_project["data"]["fps"] = int(project["data"]["fps"])
             avalon_project["data"]["resolution_width"] = int(
@@ -233,14 +238,40 @@ def main():
                     "type": "project"}, avalon_project
             )
             avalon.uninstall()
-            if os.environ["AVALON_PROJECT"] != avalon_project["name"]:
+            if old_project_name != project_name:
                 logger.info("Updating project name from {0} to {1}".format(
-                    os.environ["AVALON_PROJECT"], avalon_project["name"]))
+                    old_project_name, project_name))
 
-                lib.collection_rename(avalon_project["name"])
+                lib.collection_rename(project_name)
 
                 lib.set_project_data(
                     project["id"], project_info["id"], avalon_project["name"])
+
+                # If file system path renaming is enabled, rename project disk
+                # filepaths to match.
+                if(os.environ["FILESYS_RENAME"]):
+                    avalon_projects = os.environ["AVALON_PROJECTS"]
+
+                    old_folder_name = os.path.join(avalon_projects, old_project_name)
+
+                    new_folder_name = os.path.join(avalon_projects, project_name)
+
+                    if os.path.exists(old_folder_name):
+                        if not os.path.exists(new_folder_name):
+                            logger.info("Project name updated, renaming {0} to {1}"
+                                        .format(old_folder_name, new_folder_name))
+                            shutil.move(old_folder_name, new_folder_name)
+                        else:
+                            logger.warning(
+                                "Project name updated, trying to rename {0} to {1}, but "
+                                "new folder already exists. No action taken."
+                                .format(old_folder_name, new_folder_name)
+                            )
+                    else:
+                        logger.warning(
+                            "Project name updated, but {0} does not exist. No "
+                            "action taken."
+                            .format(old_folder_name))
 
         else:
             logger.info("Installing project: {0}".format(project["name"]))
@@ -288,11 +319,17 @@ def main():
                 logger.info("Updating Asset: {0} ({1})".format(
                     avalon_asset["data"]["label"], avalon_asset["name"]))
 
-                if avalon_asset["name"] != asset["name"]:
-                    logger.info("Updating asset name from {0} to {1}".format(
-                        avalon_asset["name"], asset["name"]))
+                # Set keep asset name for use in filesystem path renaming.
+                old_asset_name = lib.get_consistent_name(avalon_asset["name"])
 
-                avalon_asset["name"] = asset["name"]
+                # Ensure asset["name"] consistency.
+                asset_name = lib.get_consistent_name(asset["name"])
+
+                if old_asset_name != asset_name:
+                    logger.info("Updating asset name from {0} to {1}".format(
+                        avalon_asset["name"], asset_name))
+
+                avalon_asset["name"] = asset_name
                 avalon_asset["data"]["label"] = asset["data"]["label"]
                 avalon_asset["data"]["group"] = asset["data"]["group"]
 
@@ -310,7 +347,6 @@ def main():
                             if asset["data"]["fps"] != "":
                                 avalon_asset["data"]["fps"] = int(asset["data"]["fps"])
                         if "fps" in avalon_asset["data"] and "fps" not in asset["data"]:
-                            print("\n\ndel fps\n\n")
                             del avalon_asset["data"]["fps"]
 
                 if "tasks" in asset["data"]:
@@ -319,6 +355,19 @@ def main():
                 avalon.replace_one(
                     {"_id": avalon.ObjectId(asset_id), "type": "asset"},
                     avalon_asset)
+
+                if(os.environ["FILESYS_RENAME"]):
+                    if avalon_asset["silo"] == "shots":
+                        # If file system path renaming is enabled, rename shot disk
+                        # filepaths to match.
+                        lib.rename_filepath(
+                            old_asset_name, asset_name, project_name, "shots")
+                    else:
+                        # If file system path renaming is enabled, rename asset disk
+                        # filepaths to match.
+                        lib.rename_filepath(
+                            old_asset_name, asset_name, project_name, "assets"
+                            )
             else:
                 # Insert new Assets into Avalon
                 asset["parent"] = avalon.locate([asset["parent"]])
