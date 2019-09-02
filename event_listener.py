@@ -51,9 +51,9 @@ def asset_create_callback(data):
     avalon.insert_one(asset_data)
 
     # Get the Id of the asset we just inserted into Avalon
-    avalon_asset = avalon.find_one(
-        {"name": lib.get_consistent_name(asset["name"]),
-            "type": "asset"})
+    avalon_asset = avalon.find_one({
+        "name": lib.get_consistent_name(asset["name"]),
+        "type": "asset"})
 
     # Encode and store the Gazu Id and Avalon Id
     lib.set_asset_data(project["id"], data["asset_id"], avalon_asset["_id"])
@@ -185,9 +185,9 @@ def project_new_callback(data):
     avalon.insert_one(project_data)
 
     # Find the project in Avalon
-    avalon_project = avalon.find_one(
-        {"name": lib.get_consistent_name(project["name"]),
-            "type": "project"})
+    avalon_project = avalon.find_one({
+        "name": lib.get_consistent_name(project["name"]),
+        "type": "project"})
 
     # Encode and store the data
     lib.set_project_data(
@@ -215,9 +215,9 @@ def project_update_callback(data):
     avalon.install()
 
     # Find the project in Avalon
-    avalon_project = avalon.find_one(
-        {"_id": avalon.ObjectId(project_data["id"]),
-            "type": "project"})
+    avalon_project = avalon.find_one({
+        "_id": avalon.ObjectId(project_data["id"]),
+        "type": "project"})
 
     # Ensure project["name"] consistency.
     project_name = lib.get_consistent_name(project["name"])
@@ -244,9 +244,9 @@ def project_update_callback(data):
     avalon_project["data"]["resolution_height"] = int(project["resolution"])
     avalon_project["config"]["tasks"] = tasks
 
-    avalon.replace_one(
-        {"_id": avalon.ObjectId(project_data["id"]),
-            "type": "project"}, avalon_project
+    avalon.replace_one({
+        "_id": avalon.ObjectId(project_data["id"]),
+        "type": "project"}, avalon_project
     )
 
     avalon.uninstall()
@@ -359,9 +359,9 @@ def shot_new_callback(data):
     avalon.insert_one(shot_data)
 
     # Get the Id of the shot we just inserted into Avalon
-    avalon_shot = avalon.find_one(
-        {"name": lib.get_consistent_name(shot_data["name"]),
-            "type": "asset"})
+    avalon_shot = avalon.find_one({
+        "name": lib.get_consistent_name(shot_data["name"]),
+        "type": "asset"})
 
     # Encode and store the Gazu Id and Avalon Id
     lib.set_asset_data(project["id"], data["shot_id"], avalon_shot["_id"])
@@ -396,9 +396,9 @@ def shot_update_callback(data):
         shot_id = lib.get_asset_data(project["id"], data["shot_id"])
 
         # Find the asset in Avalon
-        avalon_shot = avalon.find_one(
-            {"_id": avalon.ObjectId(shot_id),
-                "type": "asset"})
+        avalon_shot = avalon.find_one({
+            "_id": avalon.ObjectId(shot_id),
+            "type": "asset"})
 
         # Set keep shot name for use in filesystem path renaming.
         old_shot_name = lib.get_consistent_name(avalon_shot["name"])
@@ -427,9 +427,9 @@ def shot_update_callback(data):
         shot_id = lib.get_asset_data(project["id"], data["shot_id"])
 
         # Find the asset in Avalon
-        avalon_shot = avalon.find_one(
-            {"_id": avalon.ObjectId(shot_id),
-                "type": "asset"})
+        avalon_shot = avalon.find_one({
+            "_id": avalon.ObjectId(shot_id),
+            "type": "asset"})
 
         # Set keep shot name for use in filesystem path renaming.
         old_shot_name = lib.get_consistent_name(avalon_shot["name"])
@@ -453,9 +453,9 @@ def shot_update_callback(data):
         if "fps" in avalon_shot["data"] and shot["data"]["fps"] == "":
             del avalon_shot["data"]["fps"]
 
-    avalon.replace_one(
-        {"_id": avalon.ObjectId(shot_id),
-            "type": "asset"}, avalon_shot)
+    avalon.replace_one({
+        "_id": avalon.ObjectId(shot_id),
+        "type": "asset"}, avalon_shot)
 
     avalon.uninstall()
 
@@ -500,9 +500,9 @@ def task_new_callback(data):
     avalon.install()
 
     # Find the asset in Avalon
-    avalon_entity = avalon.find_one(
-        {"_id": avalon.ObjectId(entity_id),
-            "type": "asset"})
+    avalon_entity = avalon.find_one({
+        "_id": avalon.ObjectId(entity_id),
+        "type": "asset"})
 
     if avalon_entity["data"] is not None:
         if "tasks" in avalon_entity["data"]:
@@ -519,6 +519,56 @@ def task_new_callback(data):
 
     logger.info("Added new \"{2}\" Task to \"{0}\" in Project \"{1}\"".format(
         avalon_entity["name"], project["name"], task_type["name"]))
+
+
+def episode_new_callback(data):
+    """
+    On receiving a episode:new event, add the episode to the Avalon
+    mongodb.
+    """
+
+    # Log in to API
+    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
+    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
+
+    episode = gazu.shot.get_episode(data["episode_id"])
+    project = gazu.project.get_project(episode["project_id"])
+
+    project_name = lib.get_consistent_name(project["name"])
+
+    os.environ["AVALON_PROJECT"] = project_name
+
+    avalon.uninstall()
+    avalon.install()
+
+    episode_data = {
+        "schema": "avalon-core:asset-2.0",
+        "name": lib.get_consistent_name(episode["name"]),
+        "silo": "shots",
+        "type": "asset",
+        "parent": avalon.locate([project_name]),
+        "data": {
+            "label": episode["name"].upper(),
+            "group": "Episode"
+        }
+    }
+    episode_data["data"]["visible"] = False
+
+    # Inset asset into Avalon DB
+    avalon.insert_one(episode_data)
+
+    # Get the Id of the asset we just inserted into Avalon
+    avalon_episode = avalon.find_one({
+        "name": lib.get_consistent_name(episode["name"]),
+        "type": "asset"})
+
+    # Encode and store the Gazu Id and Avalon Id
+    lib.set_asset_data(project["id"], data["episode_id"], avalon_episode["_id"])
+
+    avalon.uninstall()
+
+    logger.info("Create Episode \"{0}\" in Project \"{1}\"".format(
+        episode["name"], project["name"]))
 
 
 # Init Logging
@@ -542,6 +592,9 @@ gazu.events.add_listener(event_client, "shot:update", shot_update_callback)
 
 # Task Event Types
 gazu.events.add_listener(event_client, "task:new", task_new_callback)
+
+# Episode Event Types
+gazu.events.add_listener(event_client, "episode:new", episode_new_callback)
 
 
 gazu.events.run_client(event_client)
