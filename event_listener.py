@@ -571,6 +571,112 @@ def episode_new_callback(data):
         episode["name"], project["name"]))
 
 
+def episode_update_callback(data):
+    """
+    On receiving a episode:update event, update the episode in the
+    Avalon mongodb.
+    """
+
+    # Log in to API
+    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
+    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
+
+    episode = gazu.shot.get_episode(data["episode_id"])
+
+
+def sequence_new_callback(data):
+    """
+    On receiving a sequence:new event, add a sequence to the Avalon
+    mongodb.
+    """
+
+    # Log in to API
+    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
+    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
+
+    sequence = gazu.shot.get_sequence(data["sequence_id"])
+    project = gazu.project.get_project(sequence["project_id"])
+
+    if project["production_type"] == "tvshow":
+        project_name = lib.get_consistent_name(project["name"])
+        episode_name = lib.get_consistent_name(sequence["episode_name"])
+        sequence_name = lib.get_consistent_name(sequence["name"])
+        visualParent = [project_name, episode_name]
+
+        os.environ["AVALON_PROJECT"] = project_name
+
+        avalon.uninstall()
+        avalon.install()
+
+        sequence_data = {
+            "schema": "avalon-core:asset-2.0",
+            "name": "{0}_{1}".format(episode_name, sequence_name),
+            "silo": "shots",
+            "type": "asset",
+            "parent": avalon.locate([project_name]),
+            "data": {
+                "label": sequence["name"].upper(),
+                "group": sequence["episode_name"].upper()
+            }
+        }
+
+        sequence_data["data"]["visible"] = False
+        sequence_data["data"]["visualParent"] = avalon.locate(visualParent)
+    else:
+        project_name = lib.get_consistent_name(project["name"])
+        episode_name = lib.get_consistent_name(sequence["episode_name"])
+        sequence_name = lib.get_consistent_name(sequence["name"])
+        visualParent = [project_name, episode_name]
+
+        os.environ["AVALON_PROJECT"] = project_name
+
+        avalon.uninstall()
+        avalon.install()
+
+        sequence_data = {
+            "schema": "avalon-core:asset-2.0",
+            "name": "{0}".format(sequence_name),
+            "silo": "shots",
+            "type": "asset",
+            "parent": avalon.locate([project_name]),
+            "data": {
+                "label": sequence["name"].upper(),
+                "group": sequence["episode_name"].upper()
+            }
+        }
+        sequence_data["data"]["visible"] = False
+        sequence_data["data"]["visualParent"] = avalon.locate(visualParent)
+
+    # Inset asset into Avalon DB
+    avalon.insert_one(sequence_data)
+
+    # Get the Id of the asset we just inserted into Avalon
+    avalon_sequence = avalon.find_one({
+        "name": lib.get_consistent_name(sequence_data["name"]),
+        "type": "asset"})
+
+    # Encode and store the Gazu Id and Avalon Id
+    lib.set_asset_data(project["id"], data["sequence_id"], avalon_sequence["_id"])
+
+    avalon.uninstall()
+
+    logger.info("Create Sequence \"{0}\" in Project \"{1}\"".format(
+        sequence_data["name"], project["name"]))
+
+
+def sequence_update_callback(data):
+    """
+    On receiving a sequence:update event, update the sequence in the
+    Avalon mongodb.
+    """
+
+    # Log in to API
+    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
+    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
+
+    sequence = gazu.shot.get_sequence(data["sequence_id"])
+
+
 # Init Logging
 logger = lib.init_logging("event_listener")
 
@@ -595,6 +701,11 @@ gazu.events.add_listener(event_client, "task:new", task_new_callback)
 
 # Episode Event Types
 gazu.events.add_listener(event_client, "episode:new", episode_new_callback)
+gazu.events.add_listener(event_client, "episode:update", episode_update_callback)
+
+# Sequence Event Types
+gazu.events.add_listener(event_client, "sequence:new", sequence_new_callback)
+gazu.events.add_listener(event_client, "sequence:update", sequence_update_callback)
 
 
 gazu.events.run_client(event_client)
