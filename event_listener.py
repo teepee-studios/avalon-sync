@@ -571,19 +571,6 @@ def episode_new_callback(data):
         episode["name"], project["name"]))
 
 
-def episode_update_callback(data):
-    """
-    On receiving a episode:update event, update the episode in the
-    Avalon mongodb.
-    """
-
-    # Log in to API
-    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
-    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
-
-    episode = gazu.shot.get_episode(data["episode_id"])
-
-
 def sequence_new_callback(data):
     """
     On receiving a sequence:new event, add a sequence to the Avalon
@@ -661,19 +648,6 @@ def sequence_new_callback(data):
         sequence_data["name"], project["name"]))
 
 
-def sequence_update_callback(data):
-    """
-    On receiving a sequence:update event, update the sequence in the
-    Avalon mongodb.
-    """
-
-    # Log in to API
-    gazu.client.set_host("{0}/api".format(os.environ["GAZU_URL"]))
-    gazu.log_in(os.environ["GAZU_USER"], os.environ["GAZU_PASSWD"])
-
-    sequence = gazu.shot.get_sequence(data["sequence_id"])
-
-
 # Init Logging
 logger = lib.init_logging("event_listener")
 
@@ -698,11 +672,9 @@ gazu.events.add_listener(event_client, "task:new", task_new_callback)
 
 # Episode Event Types
 gazu.events.add_listener(event_client, "episode:new", episode_new_callback)
-gazu.events.add_listener(event_client, "episode:update", episode_update_callback)
 
 # Sequence Event Types
 gazu.events.add_listener(event_client, "sequence:new", sequence_new_callback)
-gazu.events.add_listener(event_client, "sequence:update", sequence_update_callback)
 
 
 gazu.events.run_client(event_client)
