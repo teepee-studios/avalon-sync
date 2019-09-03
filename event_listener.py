@@ -624,9 +624,7 @@ def sequence_new_callback(data):
         sequence_data["data"]["visualParent"] = avalon.locate(visualParent)
     else:
         project_name = lib.get_consistent_name(project["name"])
-        episode_name = lib.get_consistent_name(sequence["episode_name"])
         sequence_name = lib.get_consistent_name(sequence["name"])
-        visualParent = [project_name, episode_name]
 
         os.environ["AVALON_PROJECT"] = project_name
 
@@ -641,11 +639,10 @@ def sequence_new_callback(data):
             "parent": avalon.locate([project_name]),
             "data": {
                 "label": sequence["name"].upper(),
-                "group": sequence["episode_name"].upper()
+                "group": "Sequence"
             }
         }
         sequence_data["data"]["visible"] = False
-        sequence_data["data"]["visualParent"] = avalon.locate(visualParent)
 
     # Inset asset into Avalon DB
     avalon.insert_one(sequence_data)
