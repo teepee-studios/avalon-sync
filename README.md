@@ -255,8 +255,8 @@ It is also possible to make the timer run every 15 minutes, by replacing the
 `[Timer]` section. The setting **OnUnitInactiveSec** will run the timer if the 
 timer last ran more than 15 minutes ago, this is useful if your timer takes 
 longer than 15 minutes to run. Additionally you can add a random delay using 
-**RandomizedDelaySec**, in the example bellow, the timer runs every 15 
-minutes + some random duration below 15 minutes:
+**RandomizedDelaySec**, in the example bellow, the timer runs 15 minutes after it 
+last finished running + a random duration of less than 15 minutes:
 ```bash
 [Timer]
 OnUnitInactiveSec=15m
