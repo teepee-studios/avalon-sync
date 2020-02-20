@@ -21,6 +21,7 @@ the newly added thing to Kitsu as not existing in Avalon.
 preferable Avalon.
     * Projects in an existing Avalon install will be untouched, unless a project with
     the same name is created in Kitsu.
+* DB Sync is originally based off of the Avalon [docker sync](https://github.com/tokejepsen/docker/blob/master/volume/sync.py).
 
 ### Currently support actions
 
