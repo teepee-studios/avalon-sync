@@ -2,13 +2,14 @@
 
 ## Warning: DO NOT USE IN PRODUCTION
 
-The Avalon Sync utils are still in heavy development and have not been fully tested.
+The Avalon Sync utils are still in development and while tested, I believe they are
+flawed in their current implementation.
 
 Avalon Sync uses Gazu to sync Zou to Avalon via the Kitsu API.
-Some important notes are:
+Some important notes are and limitation:
 
 * Syncing is only **one** direction, Zou/Kitsu -> to Avalon.
-* Only new things are **Added** to Avalon and **Update** existing things in Avalon.
+* Only new things are **Added** to Avalon and existing things **Updated** in Avalon.
 * **Delete** events are *ignored*, nothing is deleted from Avalon (except for Tasks,
 due to the way they're stored in Avalon).
 * While added things *should* be done in Kitsu/Zou and then synced to Avalon, it's
@@ -16,6 +17,10 @@ still possible add things via the Avalon Project manager, however if you later a
 the same thing to Kitsu, you will end up with **duplicates** in Avalon as Avalon
 Sync will know nothing about what has already been added to Avalon and will treat
 the newly added thing to Kitsu as not existing in Avalon.
+* As a result of the above, it's recommended to use a clean install of Kitsu and
+preferable Avalon.
+    * Projects in an existing Avalon install will be untouched, unless a project with
+    the same name is created in Kitsu.
 
 ### Currently support actions
 
@@ -54,7 +59,6 @@ to know about them currently:
 </summary>
 
 * Breakdown
-*Tasks
 * Comments
 * Previews
 * Playlists
@@ -88,9 +92,8 @@ and/or check out their [GitHub](https://github.com/cgwire)
 ```bat
 @echo off
 set PYTHONPATH=Q:\path\to\your\studio-config;%PYTHONPATH%
-set PYTHONPATH=Q:\path\to\avalon-core;%PYTHONPATH%
-set AVALON_MONGO=mongodb://username:password@mongodb.host.name:27017/databaseName
 set AVALON_DB=databaseName
+set AVALON_MONGO=mongodb://username:password@mongodb.host.name:27017/%AVALON_DB%
 set MONGO_TIMEOUT=5000
 set AVALON_PROJECTS=Z:/path/to/avalon/projects
 set AVALON_CONFIG=teepee
@@ -123,8 +126,8 @@ and/or check out their [GitHub](https://github.com/cgwire)
 #!/bin/bash
 
 export PYTHONPATH=/opt/avalon-sync/avalon:$PYTHONPATH
-export AVALON_MONGO=mongodb://username:password@mongodb.host.name:27017/databaseName
 export AVALON_DB=databaseName
+export AVALON_MONGO=mongodb://username:password@mongodb.host.name:27017/$AVALON_DB
 export MONGO_TIMEOUT=5000
 export AVALON_PROJECTS=Z:/avalonTest
 export DATA_PATH=/opt/avalon-sync
@@ -161,12 +164,6 @@ sudo su - avalon-sync
 git clone http://gitlab.teepee/avalon/avalon-sync.git bin
 ```
 
-Clone Avalon Core git to the avalon directory:
-
-```bash
-git clone https://github.com/getavalon/core.git avalon
-```
-
 Create the config file:
 
 ```bash
@@ -182,8 +179,8 @@ details:
 
 ```bash
 PYTHONPATH=/opt/avalon-sync/avalon:$PYTHONPATH
-AVALON_MONGO=mongodb://username:password@mongodb.host.name:27017/databaseName
 AVALON_DB=databaseName
+AVALON_MONGO=mongodb://username:password@mongodb.host.name:27017/$AVALON_DB
 MONGO_TIMEOUT=5000
 AVALON_PROJECTS=Z:/avalonTest
 DATA_PATH=/opt/avalon-sync
@@ -201,7 +198,6 @@ partd and pymongo can be installed by either pip **OR** dnf:
 ```bash
 sudo pip3 install partd
 sudo pip3 install pymongo
-
 ```
 
 **OR**:
