@@ -211,6 +211,13 @@ def main():
                 {"_id": db.ObjectId(project_info["id"]),
                     "type": "project"})
 
+            # If project not found in Avalon DB error.
+            if not avalon_project:
+                logger.critical("Project missing from db.")
+                logger.critical("Data directory and Avalon out of sync "
+                                "quitting...")
+                quit()
+
             # Set old and new project names
             project_name = lib.get_consistent_name(project["name"])
             old_project_name = lib.get_consistent_name(avalon_project["name"])
@@ -218,12 +225,7 @@ def main():
             # Update the Avalon project with new data from Gazu
             logger.info("Updating Project: {0} ({1})".format(
                 project["data"]["label"], name))
-            if not avalon_project:
-                logger.critical("Project missing from db.")
-                logger.critical("Data directory and Avalon out of sync "
-                                "quitting...")
-                quit()
-
+            
             avalon_project["name"] = project_name
             avalon_project["data"]["label"] = project["data"]["label"]
             avalon_project["data"]["fps"] = int(project["data"]["fps"])
