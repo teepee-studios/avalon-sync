@@ -6,7 +6,7 @@ The Avalon Sync utils are still in development and while tested, I believe they 
 flawed in their current implementation.
 
 Avalon Sync uses Gazu to sync Zou to Avalon via the Kitsu API.
-Some important notes are and limitation:
+Some important notes and limitation are:
 
 * Syncing is only **one** direction, Zou/Kitsu -> to Avalon.
 * Only new things are **Added** to Avalon and existing things **Updated** in Avalon.
@@ -235,6 +235,17 @@ Type=simple
 WorkingDirectory=/opt/avalon-sync/bin
 EnvironmentFile=/opt/avalon-sync/etc/avalon-sync.conf
 ExecStart=/usr/bin/python3 /opt/avalon-sync/bin/db_sync.py
+ProtectSystem=strict
+ProtectHome=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+NoNewPrivileges=yes
+PrivateTmp=yes
+ReadWriteDirectories=/opt/analon-sync
 
 [Install]
 WantedBy=multi-user.target
@@ -307,6 +318,17 @@ Type=simple
 WorkingDirectory=/opt/avalon-sync/bin
 EnvironmentFile=/opt/avalon-sync/etc/avalon-sync.conf
 ExecStart=/usr/bin/python3 /opt/avalon-sync/bin/event_listener.py
+ProtectSystem=strict
+ProtectHome=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+NoNewPrivileges=yes
+PrivateTmp=yes
+ReadWriteDirectories=/opt/analon-sync
 
 [Install]
 WantedBy=multi-user.target
@@ -361,6 +383,17 @@ WorkingDirectory=/opt/avalon-sync/bin
 EnvironmentFile=/opt/avalon-sync/etc/avalon-sync.conf
 ExecStart=/usr/bin/python3 /opt/avalon-sync/bin/db_sync.py
 Slice=avalon-sync.slice
+ProtectSystem=strict
+ProtectHome=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+NoNewPrivileges=yes
+PrivateTmp=yes
+ReadWriteDirectories=/opt/analon-sync
 
 [Install]
 WantedBy=multi-user.target
@@ -385,6 +418,17 @@ WorkingDirectory=/opt/avalon-sync/bin
 EnvironmentFile=/opt/avalon-sync/etc/avalon-sync.conf
 ExecStart=/usr/bin/python3 /opt/avalon-sync/bin/event_listener.py
 Slice=avalon-sync.slice
+ProtectSystem=strict
+ProtectHome=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+NoNewPrivileges=yes
+PrivateTmp=yes
+ReadWriteDirectories=/opt/analon-sync
 
 [Install]
 WantedBy=multi-user.target
