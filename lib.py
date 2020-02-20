@@ -6,6 +6,7 @@ import pymongo
 import logging
 
 self = sys.modules[__name__]
+logger = None
 
 
 def init_logging(script_name):
@@ -141,21 +142,6 @@ def get_asset_data(gazu_project_id, gazu_asset_id):
         # Get the Avalon asset ID from partd
         project_data = bytes.decode(p.get(gazu_asset_id), "utf-8")
         return project_data
-
-
-def collection_rename(*args, **kwargs):
-    """Rename mongodb collection name.
-
-    Renames the current collection to the supplied name."""
-    timeout = os.getenv("MONGO_TIMEOUT", 5000)
-    mongo = os.environ["AVALON_MONGO"]
-    database = os.environ["AVALON_DB"]
-
-    self._mongo_client = pymongo.MongoClient(
-        mongo, serverSelectionTimeoutMS=timeout)
-    self._database = self._mongo_client[database]
-    self._database[os.environ["AVALON_PROJECT"]].rename(
-        *args, **kwargs)
 
 
 def rename_filepath(old_name, new_name, project_name, directory="assets"):

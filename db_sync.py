@@ -2,7 +2,7 @@ import os
 import gazu
 import shutil
 
-from avalon import io as avalon
+import db as db
 import lib as lib
 
 
@@ -202,13 +202,13 @@ def main():
             existing_projects[project["name"]] = project
             # Update project
             os.environ["AVALON_PROJECT"] = project_info["collection"]
-            avalon.uninstall()
-            avalon.install()
+            db.uninstall()
+            db.install()
 
             # Find the project in Avalon
             avalon_project = {}
-            avalon_project = avalon.find_one(
-                {"_id": avalon.ObjectId(project_info["id"]),
+            avalon_project = db.find_one(
+                {"_id": db.ObjectId(project_info["id"]),
                     "type": "project"})
 
             # Set old and new project names
@@ -219,7 +219,7 @@ def main():
             logger.info("Updating Project: {0} ({1})".format(
                 project["data"]["label"], name))
             if not avalon_project:
-                logger.critical("Project missing from Avalon.")
+                logger.critical("Project missing from db.")
                 logger.critical("Data directory and Avalon out of sync "
                                 "quitting...")
                 quit()
@@ -233,11 +233,11 @@ def main():
                 project["data"]["resolution_height"])
             avalon_project["config"]["tasks"] = tasks
 
-            avalon.replace_one(
-                {"_id": avalon.ObjectId(project_info["id"]),
+            db.replace_one(
+                {"_id": db.ObjectId(project_info["id"]),
                     "type": "project"}, avalon_project
             )
-            avalon.uninstall()
+            db.uninstall()
             if old_project_name != project_name:
                 logger.info("Updating project name from {0} to {1}".format(
                     old_project_name, project_name))
@@ -276,21 +276,21 @@ def main():
         else:
             logger.info("Installing project: {0}".format(project["name"]))
             os.environ["AVALON_PROJECT"] = project["name"]
-            avalon.uninstall()
-            avalon.install()
+            db.uninstall()
+            db.install()
 
             # Remove Gazu ID from project so it doesn't go into the Avalon DB
             project_id = project.pop("id")
 
             # Inset project into Avalon DB
-            avalon.insert_one(project)
+            db.insert_one(project)
 
             # Put Gazu ID back into the project so we can use it later for
             # assets.
             project.update(id=project_id)
 
             # Find the new project in Avalon
-            avalon_project = avalon.find_one(
+            avalon_project = db.find_one(
                 {"name": lib.get_consistent_name(project["name"]),
                     "type": "project"})
 
@@ -302,8 +302,8 @@ def main():
     for project["id"], assets in objects.items():
         project_info = lib.get_project_data(project["id"])
         os.environ["AVALON_PROJECT"] = project_info["collection"]
-        avalon.uninstall()
-        avalon.install()
+        db.uninstall()
+        db.install()
 
         for asset_name, asset in assets.items():
             asset_id = lib.get_asset_data(project["id"], asset["id"])
@@ -313,8 +313,8 @@ def main():
 
                 # Find asset in Avalon
                 avalon_asset = {}
-                avalon_asset = avalon.find_one(
-                    {"_id": avalon.ObjectId(asset_id), "type": "asset"})
+                avalon_asset = db.find_one(
+                    {"_id": db.ObjectId(asset_id), "type": "asset"})
 
                 logger.info("Updating Asset: {0} ({1})".format(
                     avalon_asset["data"]["label"], avalon_asset["name"]))
@@ -352,8 +352,8 @@ def main():
                 if "tasks" in asset["data"]:
                     avalon_asset["data"]["tasks"] = asset["data"]["tasks"]
 
-                avalon.replace_one(
-                    {"_id": avalon.ObjectId(asset_id), "type": "asset"},
+                db.replace_one(
+                    {"_id": db.ObjectId(asset_id), "type": "asset"},
                     avalon_asset)
 
                 if(os.environ["FILESYS_RENAME"]):
@@ -370,12 +370,12 @@ def main():
                             )
             else:
                 # Insert new Assets into Avalon
-                asset["parent"] = avalon.locate([asset["parent"]])
+                asset["parent"] = db.locate([asset["parent"]])
 
                 if "visualParent" in asset["data"]:
                     visual_parent = lib.get_consistent_name(
                         asset["data"]["visualParent"])
-                    asset_data = avalon.find_one(
+                    asset_data = db.find_one(
                         {"type": "asset", "name": visual_parent})
                     asset["data"]["visualParent"] = asset_data["_id"]
 
@@ -389,10 +389,10 @@ def main():
                     asset.pop("asset_type")
 
                 # Inset asset into Avalon DB
-                avalon.insert_one(asset)
+                db.insert_one(asset)
 
                 # Get the Id of the asset we just inserted into Avalon
-                avalon_asset = avalon.find_one(
+                avalon_asset = db.find_one(
                     {"name": lib.get_consistent_name(asset["name"]), "type": "asset"})
 
                 # Encode and store the Gazu Id and Avalon Id

@@ -2,7 +2,7 @@ import os
 import gazu
 import shutil
 
-from avalon import io as avalon
+import db as db
 import lib as lib
 
 
@@ -31,8 +31,8 @@ def asset_create_callback(data):
 
     os.environ["AVALON_PROJECT"] = project_name
 
-    avalon.uninstall()
-    avalon.install()
+    db.uninstall()
+    db.install()
 
     entity_type = gazu.entity.get_entity_type(asset["entity_type_id"])
     asset_data = {
@@ -40,7 +40,7 @@ def asset_create_callback(data):
         "name": lib.get_consistent_name(asset["name"]),
         "silo": "assets",
         "type": "asset",
-        "parent": avalon.locate([project_name]),
+        "parent": db.locate([project_name]),
         "data": {
             "label": asset.get("label", asset["name"]),
             "group": entity_type["name"]
@@ -48,17 +48,17 @@ def asset_create_callback(data):
     }
 
     # Inset asset into Avalon DB
-    avalon.insert_one(asset_data)
+    db.insert_one(asset_data)
 
     # Get the Id of the asset we just inserted into Avalon
-    avalon_asset = avalon.find_one({
+    avalon_asset = db.find_one({
         "name": lib.get_consistent_name(asset["name"]),
         "type": "asset"})
 
     # Encode and store the Gazu Id and Avalon Id
     lib.set_asset_data(project["id"], data["asset_id"], avalon_asset["_id"])
 
-    avalon.uninstall()
+    db.uninstall()
 
     logger.info("Create Asset \"{0}\" in Project \"{1}\"".format(
         asset["name"], project["name"]))
@@ -76,8 +76,8 @@ def asset_update_callback(data):
 
     os.environ["AVALON_PROJECT"] = project_name
 
-    avalon.uninstall()
-    avalon.install()
+    db.uninstall()
+    db.install()
 
     # Get Avalon Asset Id.
     asset_id = lib.get_asset_data(project["id"], data["asset_id"])
@@ -85,8 +85,8 @@ def asset_update_callback(data):
     entity_type = gazu.entity.get_entity_type(asset["entity_type_id"])
 
     # Find the asset in Avalon
-    avalon_asset = avalon.find_one(
-        {"_id": avalon.ObjectId(asset_id),
+    avalon_asset = db.find_one(
+        {"_id": db.ObjectId(asset_id),
             "type": "asset"})
 
     # Set keep asset name for use in filesystem path renaming.
@@ -99,10 +99,10 @@ def asset_update_callback(data):
     avalon_asset["data"]["label"] = asset["name"]
     avalon_asset["data"]["group"] = entity_type["name"]
 
-    avalon.replace_one(
-        {"_id": avalon.ObjectId(asset_id), "type": "asset"}, avalon_asset)
+    db.replace_one(
+        {"_id": db.ObjectId(asset_id), "type": "asset"}, avalon_asset)
 
-    avalon.uninstall()
+    db.uninstall()
 
     logger.info("Updated Asset \"{0}\" in Project \"{1}\"".format(
         old_asset_name, project["name"]))
@@ -135,8 +135,8 @@ def project_new_callback(data):
 
     os.environ["AVALON_PROJECT"] = project_name
 
-    avalon.uninstall()
-    avalon.install()
+    db.uninstall()
+    db.install()
 
     # Newly created projects don't have a resolution set
     if project["resolution"]:
@@ -182,10 +182,10 @@ def project_new_callback(data):
     }
 
     # Insert asset into Avalon DB
-    avalon.insert_one(project_data)
+    db.insert_one(project_data)
 
     # Find the project in Avalon
-    avalon_project = avalon.find_one({
+    avalon_project = db.find_one({
         "name": lib.get_consistent_name(project["name"]),
         "type": "project"})
 
@@ -193,7 +193,7 @@ def project_new_callback(data):
     lib.set_project_data(
         data["project_id"], avalon_project["_id"], avalon_project['name'])
 
-    avalon.uninstall()
+    db.uninstall()
 
     logger.info("Created Project: \"{0}\"".format(project["name"]))
 
@@ -211,12 +211,12 @@ def project_update_callback(data):
 
     os.environ["AVALON_PROJECT"] = project_data["collection"]
 
-    avalon.uninstall()
-    avalon.install()
+    db.uninstall()
+    db.install()
 
     # Find the project in Avalon
-    avalon_project = avalon.find_one({
-        "_id": avalon.ObjectId(project_data["id"]),
+    avalon_project = db.find_one({
+        "_id": db.ObjectId(project_data["id"]),
         "type": "project"})
 
     # Ensure project["name"] consistency.
@@ -244,12 +244,12 @@ def project_update_callback(data):
     avalon_project["data"]["resolution_height"] = int(project["resolution"])
     avalon_project["config"]["tasks"] = tasks
 
-    avalon.replace_one({
-        "_id": avalon.ObjectId(project_data["id"]),
+    db.replace_one({
+        "_id": db.ObjectId(project_data["id"]),
         "type": "project"}, avalon_project
     )
 
-    avalon.uninstall()
+    db.uninstall()
 
     if old_project_name != project_name:
         logger.info("Updating project name from {0} to {1}".format(
@@ -313,21 +313,21 @@ def shot_new_callback(data):
 
         os.environ["AVALON_PROJECT"] = project_name
 
-        avalon.uninstall()
-        avalon.install()
+        db.uninstall()
+        db.install()
 
         shot_data = {
             "schema": "avalon-core:asset-2.0",
             "name": "{0}_{1}_{2}".format(episode_name, sequence_name, shot_name),
             "silo": "shots",
             "type": "asset",
-            "parent": avalon.locate([project_name]),
+            "parent": db.locate([project_name]),
             "data": {
                 "label": shot["name"],
                 "group": "{0} {1}".format(
                     shot["episode_name"].upper(),
                     shot["sequence_name"].upper()),
-                "visualParent": avalon.locate(visualParent)
+                "visualParent": db.locate(visualParent)
             }
         }
     else:
@@ -339,27 +339,27 @@ def shot_new_callback(data):
 
         os.environ["AVALON_PROJECT"] = project_name
 
-        avalon.uninstall()
-        avalon.install()
+        db.uninstall()
+        db.install()
 
         shot_data = {
             "schema": "avalon-core:asset-2.0",
             "name": "{0}_{1}".format(sequence_name, shot_name),
             "silo": "shots",
             "type": "asset",
-            "parent": avalon.locate([project_name]),
+            "parent": db.locate([project_name]),
             "data": {
                 "label": shot["name"],
                 "group": "{0}".format(shot["sequence_name"].upper()),
-                "visualParent": avalon.locate(visualParent)
+                "visualParent": db.locate(visualParent)
             }
         }
 
     # Inset shot into Avalon DB
-    avalon.insert_one(shot_data)
+    db.insert_one(shot_data)
 
     # Get the Id of the shot we just inserted into Avalon
-    avalon_shot = avalon.find_one({
+    avalon_shot = db.find_one({
         "name": lib.get_consistent_name(shot_data["name"]),
         "type": "asset"})
 
@@ -389,15 +389,15 @@ def shot_update_callback(data):
 
         os.environ["AVALON_PROJECT"] = project_name
 
-        avalon.uninstall()
-        avalon.install()
+        db.uninstall()
+        db.install()
 
         # Get Avalon Shot Id.
         shot_id = lib.get_asset_data(project["id"], data["shot_id"])
 
         # Find the asset in Avalon
-        avalon_shot = avalon.find_one({
-            "_id": avalon.ObjectId(shot_id),
+        avalon_shot = db.find_one({
+            "_id": db.ObjectId(shot_id),
             "type": "asset"})
 
         # Set keep shot name for use in filesystem path renaming.
@@ -409,7 +409,7 @@ def shot_update_callback(data):
         avalon_shot["data"]["label"] = shot["name"]
         avalon_shot["data"]["group"] = "{0} {1}".format(
             shot["episode_name"].upper(), shot["sequence_name"].upper())
-        avalon_shot["data"]["visualParent"] = avalon.locate(visualParent)
+        avalon_shot["data"]["visualParent"] = db.locate(visualParent)
 
     else:
         # Ensure name consistency.
@@ -420,15 +420,15 @@ def shot_update_callback(data):
 
         os.environ["AVALON_PROJECT"] = project_name
 
-        avalon.uninstall()
-        avalon.install()
+        db.uninstall()
+        db.install()
 
         # Get Avalon Shot Id.
         shot_id = lib.get_asset_data(project["id"], data["shot_id"])
 
         # Find the asset in Avalon
-        avalon_shot = avalon.find_one({
-            "_id": avalon.ObjectId(shot_id),
+        avalon_shot = db.find_one({
+            "_id": db.ObjectId(shot_id),
             "type": "asset"})
 
         # Set keep shot name for use in filesystem path renaming.
@@ -438,7 +438,7 @@ def shot_update_callback(data):
         avalon_shot["name"] = new_shot_name
         avalon_shot["data"]["label"] = shot["name"]
         avalon_shot["data"]["group"] = "{0}".format(shot["sequence_name"].upper())
-        avalon_shot["data"]["visualParent"] = avalon.locate(visualParent)
+        avalon_shot["data"]["visualParent"] = db.locate(visualParent)
 
     if shot["data"] is not None:
         if "frame_in" in shot["data"]:
@@ -453,11 +453,11 @@ def shot_update_callback(data):
         if "fps" in avalon_shot["data"] and shot["data"]["fps"] == "":
             del avalon_shot["data"]["fps"]
 
-    avalon.replace_one({
-        "_id": avalon.ObjectId(shot_id),
+    db.replace_one({
+        "_id": db.ObjectId(shot_id),
         "type": "asset"}, avalon_shot)
 
-    avalon.uninstall()
+    db.uninstall()
 
     logger.info("Updated Shot \"{0}\" in Project \"{1}\"".format(
         avalon_shot["name"], project["name"]))
@@ -496,12 +496,12 @@ def task_new_callback(data):
 
     os.environ["AVALON_PROJECT"] = project_name
 
-    avalon.uninstall()
-    avalon.install()
+    db.uninstall()
+    db.install()
 
     # Find the asset in Avalon
-    avalon_entity = avalon.find_one({
-        "_id": avalon.ObjectId(entity_id),
+    avalon_entity = db.find_one({
+        "_id": db.ObjectId(entity_id),
         "type": "asset"})
 
     if avalon_entity["data"] is not None:
@@ -512,10 +512,10 @@ def task_new_callback(data):
     else:
         avalon_entity["data"]["tasks"] = [task_name]
 
-    avalon.replace_one(
-        {"_id": avalon.ObjectId(entity_id), "type": "asset"}, avalon_entity)
+    db.replace_one(
+        {"_id": db.ObjectId(entity_id), "type": "asset"}, avalon_entity)
 
-    avalon.uninstall()
+    db.uninstall()
 
     logger.info("Added new \"{2}\" Task to \"{0}\" in Project \"{1}\"".format(
         avalon_entity["name"], project["name"], task_type["name"]))
@@ -538,15 +538,15 @@ def episode_new_callback(data):
 
     os.environ["AVALON_PROJECT"] = project_name
 
-    avalon.uninstall()
-    avalon.install()
+    db.uninstall()
+    db.install()
 
     episode_data = {
         "schema": "avalon-core:asset-2.0",
         "name": lib.get_consistent_name(episode["name"]),
         "silo": "shots",
         "type": "asset",
-        "parent": avalon.locate([project_name]),
+        "parent": db.locate([project_name]),
         "data": {
             "label": episode["name"].upper(),
             "group": "Episode"
@@ -555,17 +555,17 @@ def episode_new_callback(data):
     episode_data["data"]["visible"] = False
 
     # Inset asset into Avalon DB
-    avalon.insert_one(episode_data)
+    db.insert_one(episode_data)
 
     # Get the Id of the asset we just inserted into Avalon
-    avalon_episode = avalon.find_one({
+    avalon_episode = db.find_one({
         "name": lib.get_consistent_name(episode["name"]),
         "type": "asset"})
 
     # Encode and store the Gazu Id and Avalon Id
     lib.set_asset_data(project["id"], data["episode_id"], avalon_episode["_id"])
 
-    avalon.uninstall()
+    db.uninstall()
 
     logger.info("Create Episode \"{0}\" in Project \"{1}\"".format(
         episode["name"], project["name"]))
@@ -592,15 +592,15 @@ def sequence_new_callback(data):
 
         os.environ["AVALON_PROJECT"] = project_name
 
-        avalon.uninstall()
-        avalon.install()
+        db.uninstall()
+        db.install()
 
         sequence_data = {
             "schema": "avalon-core:asset-2.0",
             "name": "{0}_{1}".format(episode_name, sequence_name),
             "silo": "shots",
             "type": "asset",
-            "parent": avalon.locate([project_name]),
+            "parent": db.locate([project_name]),
             "data": {
                 "label": sequence["name"].upper(),
                 "group": sequence["episode_name"].upper()
@@ -608,22 +608,22 @@ def sequence_new_callback(data):
         }
 
         sequence_data["data"]["visible"] = False
-        sequence_data["data"]["visualParent"] = avalon.locate(visualParent)
+        sequence_data["data"]["visualParent"] = db.locate(visualParent)
     else:
         project_name = lib.get_consistent_name(project["name"])
         sequence_name = lib.get_consistent_name(sequence["name"])
 
         os.environ["AVALON_PROJECT"] = project_name
 
-        avalon.uninstall()
-        avalon.install()
+        db.uninstall()
+        db.install()
 
         sequence_data = {
             "schema": "avalon-core:asset-2.0",
             "name": "{0}".format(sequence_name),
             "silo": "shots",
             "type": "asset",
-            "parent": avalon.locate([project_name]),
+            "parent": db.locate([project_name]),
             "data": {
                 "label": sequence["name"].upper(),
                 "group": "Sequence"
@@ -632,17 +632,17 @@ def sequence_new_callback(data):
         sequence_data["data"]["visible"] = False
 
     # Inset asset into Avalon DB
-    avalon.insert_one(sequence_data)
+    db.insert_one(sequence_data)
 
     # Get the Id of the asset we just inserted into Avalon
-    avalon_sequence = avalon.find_one({
+    avalon_sequence = db.find_one({
         "name": lib.get_consistent_name(sequence_data["name"]),
         "type": "asset"})
 
     # Encode and store the Gazu Id and Avalon Id
     lib.set_asset_data(project["id"], data["sequence_id"], avalon_sequence["_id"])
 
-    avalon.uninstall()
+    db.uninstall()
 
     logger.info("Create Sequence \"{0}\" in Project \"{1}\"".format(
         sequence_data["name"], project["name"]))
