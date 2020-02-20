@@ -17,8 +17,8 @@ still possible add things via the Avalon Project manager, however if you later a
 the same thing to Kitsu, you will end up with **duplicates** in Avalon as Avalon
 Sync will know nothing about what has already been added to Avalon and will treat
 the newly added thing to Kitsu as not existing in Avalon.
-* As a result of the above, it's recommended to use a clean install of Kitsu and
-preferable Avalon.
+* As a result of the above, it's recommended to use a clean/new install of Kitsu
+and preferable Avalon ***OR*** only a clean/new Avalon install.
     * Projects in an existing Avalon install will be untouched, unless a project with
     the same name is created in Kitsu.
 * DB Sync is originally based off of the Avalon [docker sync](https://github.com/tokejepsen/docker/blob/master/volume/sync.py).
